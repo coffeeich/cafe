@@ -1,3 +1,3 @@
 # Cafe
 
-    Cafe gives full power of **coffee** beans
+  Cafe gives full power of **coffee** beans
