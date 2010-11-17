@@ -1,4 +1,4 @@
 #!/usr/bin/env node
 
-require(__dirname + '/../compile').run();
+require(__dirname + '/compiler').run();
 
