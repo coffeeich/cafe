@@ -1,4 +1,6 @@
 #!/usr/bin/env node
 
-require(__dirname + '/compiler').run();
+path   = "/usr/local/lib/node/coffee-script"
+coffee = require(path)
 
+require(__dirname + '/compiler').run(path);
