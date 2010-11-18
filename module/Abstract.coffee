@@ -9,11 +9,12 @@ package "cafe.module",
 Abstract: class Abstract
 
   name: ""
+  byDefault: "index"
 
   # Этот метод должен содержать инструкции по выполнению модуля
   # Этот метод должен быть переопределен
   run: () ->
-    action = (@getAction() or "index") + "Action"
+    action = (Location.getAction() or @byDefault) + "Action"
 
     unless typeof this[action] is "function"
       console.log("Метод " + action + " для модуля " + @name +" не реализован!!!")
@@ -31,8 +32,5 @@ Abstract: class Abstract
 
   afterActionRun: () ->
 
-
-  # Вернет название экшена
-  # @return string
-  getAction: () ->
-    return Location.getAction()
+  defaults: (byDefault) ->
+    @byDefault = byDefault
