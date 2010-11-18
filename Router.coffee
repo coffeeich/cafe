@@ -44,6 +44,7 @@ Router: class Router
 
       if run
         Router.onDOMContentLoaded -> Router.runModule(className, Class)
+        break
 
   @onDOMContentLoaded: (callback) ->
     return unless typeof callback is "function"
