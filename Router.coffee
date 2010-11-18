@@ -7,6 +7,10 @@ Router: class Router
   @contentLoaded: no
   @beforeRunCallbacks: []
   @afterRunCallbacks: []
+  @aliasesJSON: null
+
+  @aliases: (json) ->
+    @aliasesJSON = json
 
   @beforeRun: (callback) ->
     @beforeRunCallbacks.push(callback)
@@ -31,9 +35,15 @@ Router: class Router
   @dispatch: (defaultModule, modules) ->
     section = Location.getSection() or defaultModule
 
+    matchModule = (module) -> (module + "Module").toLowerCase() is className.toLowerCase()
+
     for className, Class of modules
-      if (section + "Module").toLowerCase() is className.toLowerCase()
-        Router.onDOMContentLoaded => Router.runModule(className, Class)
+      unless run = matchModule(section)
+        for module, aliases of @aliasesJSON
+          break if (section in aliases) and run = matchModule(module)
+
+      if run
+        Router.onDOMContentLoaded -> Router.runModule(className, Class)
 
   @onDOMContentLoaded: (callback) ->
     return unless typeof callback is "function"

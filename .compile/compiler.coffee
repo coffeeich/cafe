@@ -69,7 +69,7 @@ exports.run = (path) ->
 
         fileSystem.writeFileSync(cacheFile, code)
 
-        command = "java -jar #{__dirname}/.closure-compiler/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --js #{cacheFile} --js_output_file #{jsFile}"
+        command = "java -jar #{__dirname}/../.closure-compiler/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --js #{cacheFile} --js_output_file #{jsFile}"
 
         childProcess  = require("child_process")
         childProcess.exec(command, (error, stdout, stderr) ->
