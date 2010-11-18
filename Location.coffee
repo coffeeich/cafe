@@ -70,6 +70,9 @@ package "cafe", {
     @getAction: () ->
       return @getInstance().path.split("/")[2] or ""
 
+    @getPathParams: () ->
+      return @getInstance().path.split("/").slice(3)
+
     @getProtocol: () ->
       return @getInstance().protocol
 
