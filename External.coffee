@@ -5,35 +5,42 @@ package "cafe",
 
 External: class External
 
-  @deferred: null
+  @deferred : {}
+  @processes: null
 
-  @require: (libs, callback, dir2) ->
-    @deferred = Deferred.processing(
-      => @deferred
-      =>
+  @require: (libs, callback) ->
+    External.processes = Deferred.processing(
+      -> External.processes
+      ->
         Deferred.processing(
           for dir, files of libs
             files = [files] unless files instanceof Array
 
-            =>
+            ->
               Deferred.processing(
                 for file in files
                   =>
+                    return External.deferred[file] if file of External.deferred
+
                     if (/^http:\/\//).test(dir)
                       rpc = new RPC(dir)
                     else
                       rpc = new RPC("get://#{dir}")
 
                     rpc.setDataType("script")
-                    rpc.call("#{file}.js")
+
+                    External.deferred[file] = Deferred.processing(
+                      rpc.call("#{file}.js")
+                    )
               )
+
         )
     ).
       addCallback( -> callback?()).
       addErrorback((error) -> console.log(error) )
 
   @wait: (callback) ->
-    process = Deferred.processing => @deferred
+    process = Deferred.processing -> External.processes
 
     process.addCallback(callback) if callback
 
