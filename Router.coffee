@@ -7,6 +7,8 @@ Router: class Router
   @contentLoaded: no
   @beforeRunCallbacks: []
   @afterRunCallbacks: []
+  @beforeAllCallbacks: []
+  @afterAllCallbacks: []
   @aliasesJSON: null
 
   @aliases: (json) ->
@@ -17,6 +19,12 @@ Router: class Router
 
   @afterRun: (callback) ->
     @afterRunCallbacks.push(callback)
+
+  @beforeAll: (callback) ->
+    @beforeAllCallbacks.push(callback)
+
+  @afterAll: (callback) ->
+    @afterAllCallbacks.push(callback)
 
   @runModule: (className, Class) ->
     wait = ( cafe.External.wait?() if cafe.External? ) or ->
@@ -30,12 +38,22 @@ Router: class Router
 
       afterRun?() for afterRun in @afterRunCallbacks
 
+      afterAll?() for afterAll in @afterAllCallbacks
+
       return
 
   @dispatch: (defaultModule, modules) ->
     section = Location.getSection() or defaultModule
 
     matchModule = (module) -> (module + "Module").toLowerCase() is className.toLowerCase()
+
+    wait = ( cafe.External.wait?() if cafe.External? ) or ->
+
+    wait ->
+      beforeAll?() for beforeAll in Router.beforeAllCallbacks
+      return
+
+    run = no
 
     for className, Class of modules
       unless run = matchModule(section)
@@ -45,6 +63,15 @@ Router: class Router
       if run
         Router.onDOMContentLoaded -> Router.runModule(className, Class)
         break
+
+    unless run
+      Router.onDOMContentLoaded ->
+        wait = ( cafe.External.wait?() if cafe.External? ) or ->
+
+        wait ->
+          afterAll?() for afterAll in Router.afterAllCallbacks
+          return
+
 
   @onDOMContentLoaded: (callback) ->
     return unless typeof callback is "function"
