@@ -8,16 +8,26 @@ package "cafe.module",
 #
 Abstract: class Abstract
 
+  @settings:
+    missingAction: "log"
+    defaultAction: "index"
+
   name: ""
-  byDefault: "index"
 
   # Этот метод должен содержать инструкции по выполнению модуля
   # Этот метод должен быть переопределен
   run: () ->
-    action = (Location.getAction() or @byDefault) + "Action"
+    settings = @getModule().settings or Abstract.settings
 
-    unless typeof this[action] is "function"
-      console.log("Метод " + action + " для модуля " + @name +" не реализован!!!")
+    action = (Location.getAction() or settings.defaultAction) + "Action"
+
+    if actionIsMissing = typeof this[action] isnt "function"
+
+      switch settings.missingAction
+        when "ignore" then # nothing
+        when "log"
+          console.log("Метод " + action + " для модуля " + @name +" не реализован!!!") unless @getModule().ignoreMissingAction
+
       return
 
     @beforeActionRun()
@@ -32,5 +42,6 @@ Abstract: class Abstract
 
   afterActionRun: () ->
 
-  defaults: (byDefault) ->
-    @byDefault = byDefault
+  @extended: (ChildClass) ->
+    ChildClass::getModule = () ->
+      return ChildClass
