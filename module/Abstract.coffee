@@ -8,9 +8,10 @@ package "cafe.module",
 #
 Abstract: class Abstract
 
+  @defaultAction: "index"
+
   @settings:
     missingAction: "log"
-    defaultAction: "index"
 
   name: ""
 
@@ -19,7 +20,7 @@ Abstract: class Abstract
   run: () ->
     settings = @getModule().settings or Abstract.settings
 
-    action = (Location.getAction() or settings.defaultAction) + "Action"
+    action = (Location.getAction() or settings.defaultAction or Abstract.defaultAction) + "Action"
 
     if actionIsMissing = typeof this[action] isnt "function"
 
