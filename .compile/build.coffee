@@ -8,11 +8,16 @@ exports.Import = class Import
 
   constructor: (fileDir, coffee) ->
     @fileDir = fileDir
-    @imported = []
+    @imported = {}
     @coffee = coffee
 
   parse: (code) ->
-    return "__imported = {}\n" + @doImport(code)
+    code = @doImport(code)
+
+    for some of @imported
+      return "__imported = {}\n" + code
+
+    return code
 
   doImport: (code) ->
     return code.split(/\n/).map((code) =>
