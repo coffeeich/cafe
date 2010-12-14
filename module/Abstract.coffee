@@ -18,7 +18,7 @@ Abstract: class Abstract
   # Этот метод должен содержать инструкции по выполнению модуля
   # Этот метод должен быть переопределен
   run: () ->
-    settings = @getModule().settings or Abstract.settings
+    settings = @constructor.settings or Abstract.settings
 
     action = (Location.getAction() or settings.defaultAction or Abstract.defaultAction) + "Action"
 
@@ -27,7 +27,7 @@ Abstract: class Abstract
       switch settings.missingAction
         when "ignore" then # nothing
         when "log"
-          console.log("Метод " + action + " для модуля " + @name +" не реализован!!!") unless @getModule().ignoreMissingAction
+          console.log("Метод " + action + " для модуля " + @name +" не реализован!!!") unless @constructor.ignoreMissingAction
 
       return
 
@@ -42,7 +42,3 @@ Abstract: class Abstract
   beforeActionRun: () ->
 
   afterActionRun: () ->
-
-  @extended: (ChildClass) ->
-    ChildClass::getModule = () ->
-      return ChildClass

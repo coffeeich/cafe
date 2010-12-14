@@ -12,7 +12,7 @@ exports.Parser = class Parser
     included = {}
 
     for keyword, coffee of Parser.extras
-      regexp = /#{keyword}/g
+      regexp = ///#{keyword}///g
 
       if regexp.test(code)
         if coffee.method
