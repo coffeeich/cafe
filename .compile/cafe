@@ -1,6 +1,42 @@
 #!/usr/bin/env node
 
-path   = "/usr/local/lib/node/coffee-script"
-coffee = require(path)
+var fs   = require("fs");
+var path = require("path");
+var exec = require("child_process").exec
 
-require(__dirname + '/compiler').run(path);
+require.paths.unshift(
+  path.dirname(
+    fs.realpathSync(__filename)
+  )
+);
+
+exec("which coffee", function(error, stdOutput, stdError) {
+  if (! stdError) {
+    console.log(stdError);
+  }
+
+  if (error) {
+    throw error;
+  }
+
+  if (! stdOutput) {
+    return;
+  }
+
+  var coffeePath = fs.realpathSync(stdOutput.trim());
+
+  var libPath = path.normalize(path.dirname(coffeePath) + "/../lib/node/coffee-script");
+
+  var coffee       = require(libPath);
+  var OptionParser = require(libPath + "/optparse").OptionParser;
+  var Compiler     = require("compiler").Compiler
+
+  var compiler = new Compiler(
+    coffee,
+    new OptionParser(Compiler.options,"").parse(process.argv.slice(2))
+  );
+
+  compiler.setPrinter(require("util"));
+
+  compiler.run();
+});

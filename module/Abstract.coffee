@@ -25,9 +25,9 @@ Abstract: class Abstract
     if actionIsMissing = typeof this[action] isnt "function"
 
       switch settings.missingAction
-        when "ignore" then # nothing
+        when "ignore" then break
         when "log"
-          console.log("Метод " + action + " для модуля " + @name +" не реализован!!!") unless @constructor.ignoreMissingAction
+          console.log("Метод " + action + " для модуля " + @name + " не реализован!!!") unless @constructor.ignoreMissingAction
 
       return
 
