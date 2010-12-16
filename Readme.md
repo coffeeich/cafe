@@ -8,13 +8,13 @@
 
   Pull or download cafe and go into cafe directory, then run
 
-   sudo cake install
+    sudo cake install
 
 # Uninstalling
 
   Go into cafe directory, then run
 
-   sudo cake uninstall
+    sudo cake uninstall
 
 # Compiling
 
