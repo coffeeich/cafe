@@ -4,7 +4,7 @@
 
 # Installing
 
-  Install Node.js, and CoffeeScript (http://coffeescript.org/)
+  Install [Node.js](http://nodejs.org/), and [CoffeeScript](http://coffeescript.org/)
 
   Pull or download cafe and go into cafe directory, then run
    sudo cake install
