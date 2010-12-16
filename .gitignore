@@ -2,10 +2,4 @@
 .hg
 .hgignore
 .hgtags
-cache
-www
-deploy.ini
-config.ini
-config.base.ini
-pakefile.php
 use.in
