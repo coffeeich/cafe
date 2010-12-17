@@ -23,13 +23,12 @@ header = '''
 log = (message, color, explanation) ->
   console.log color + message + reset + ' ' + (explanation or '')
 
-option '-p', '--prefix [DIR]', 'set the installation prefix for `cake install/uninstall`'
 option '-d', '--dir    [DIR]', 'set the directory argument'
 
-task 'install', 'install Cafe into /usr/local (or --prefix)', (options) ->
-  base = options.prefix or '/usr/local'
+task 'install', 'install Cafe into /usr/local (need sudo)', (options) ->
+  base = '/usr/local'
 
-  exec "sudo cake -p #{base} uninstall", (error, stdOutput, stdError) ->
+  exec "sudo cake uninstall", (error, stdOutput, stdError) ->
     if error
       console.log stdError.trim()
     else
@@ -72,8 +71,8 @@ task 'install', 'install Cafe into /usr/local (or --prefix)', (options) ->
         else
           log('done', green)
 
-task 'uninstall', 'uninstall Cafe from /usr/local (or --prefix)', (options) ->
-  base = options.prefix or '/usr/local'
+task 'uninstall', 'uninstall Cafe from /usr/local (need sudo)', (options) ->
+  base = '/usr/local'
 
   lib = "#{base}/lib/cafe"
   bin = "#{base}/bin"
