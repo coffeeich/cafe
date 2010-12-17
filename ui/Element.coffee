@@ -9,220 +9,219 @@ checkOn = (->
   return checkbox.value is "on"
 )()
 
-package "cafe.ui",
+package "cafe.ui"
 
-#
-# @author Roman.I.Kuzmin roman.i.kuzmin@gmail.com
-#
-Element: class Element extends Observable
+  #
+  # @author Roman.I.Kuzmin roman.i.kuzmin@gmail.com
+  Element: class Element extends Observable
 
-  # @type HTMLElement
-  element: null
+    # @type HTMLElement
+    element: null
 
-  nodeName: null
+    nodeName: null
 
-  decorator: null
+    decorator: null
 
-  label: null
+    label: null
 
-  injectionNodes: null
-  injectionRoot: null
+    injectionNodes: null
+    injectionRoot: null
 
-  # Конструктор
-  # @param  HTMLElement element селектор
-  constructor: (element) ->
-    if element and typeof element.nodeType is "number"
-      @element = element
+    # Конструктор
+    # @param  HTMLElement element селектор
+    constructor: (element) ->
+      if element and typeof element.nodeType is "number"
+        @element = element
 
-      @setNodeName(@element.nodeName.toLowerCase())
+        @setNodeName(@element.nodeName.toLowerCase())
 
-  # Получить выбранное значение
-  # @return string|int
-  getValue: () ->
-    return Element.getElementValue(@element)
+    # Получить выбранное значение
+    # @return string|int
+    getValue: () ->
+      return Element.getElementValue(@element)
 
-  getNodeName: () ->
-    return @nodeName or null
+    getNodeName: () ->
+      return @nodeName or null
 
-  setNodeName: (nodeName) ->
-    throw new Error("Сan not reassign a node name value, is already '#{@nodeName}'") if @getNodeName() isnt null
+    setNodeName: (nodeName) ->
+      throw new Error("Сan not reassign a node name value, is already '#{@nodeName}'") if @getNodeName() isnt null
 
-    @nodeName = nodeName
+      @nodeName = nodeName
 
-  getDecorator: () ->
-    return @injectionNodes
+    getDecorator: () ->
+      return @injectionNodes
 
-  setDecorator: (decorator) ->
-    if typeof decorator is "string"
-      hashCode = @hashCode()
-
-      decorator = decorator.
-        replace(/%label%/img, "<span id='label-place-holder-#{hashCode}'><!-- --></span>").
-        replace(/%element%/img, "<span id='element-place-holder-#{hashCode}'><!-- --></span>")
-
-      @decorator = Document.createFragment(decorator)
-
-    @decorator = decorator.cloneNode(yes) if decorator and decorator.nodeType in [1, 11]
-
-  reject: () ->
-    if @injectionRoot and @injectionNodes instanceof Array
-      @injectionRoot.removeChild(injection) for injection in @injectionNodes
-
-    @injectionNodes = null
-    @injectionRoot  = null
-
-  inject: (node) ->
-    if node and typeof node.nodeType is "number"
-      if @decorator
-        contentNode = @decorator.cloneNode(yes)
-
+    setDecorator: (decorator) ->
+      if typeof decorator is "string"
         hashCode = @hashCode()
 
-        for child in contentNode.childNodes
-          for span in (span for span in child.getElementsByTagName("span"))
-            switch span.id
-              when "label-place-holder-#{hashCode}"
-                parent.replaceChild(@getLabel(), span) if parent = span.parentNode
-              when "element-place-holder-#{hashCode}"
-                parent.replaceChild(@getElement(), span) if parent = span.parentNode
-      else
-        contentNode = @getElement()
+        decorator = decorator.
+          replace(/%label%/img, "<span id='label-place-holder-#{hashCode}'><!-- --></span>").
+          replace(/%element%/img, "<span id='element-place-holder-#{hashCode}'><!-- --></span>")
 
-      @reject()
+        @decorator = Document.createFragment(decorator)
 
-      if contentNode.nodeType is 11
-        @injectionNodes = child for child in contentNode.childNodes
-      else
-        @injectionNodes = [contentNode]
+      @decorator = decorator.cloneNode(yes) if decorator and decorator.nodeType in [1, 11]
 
-      @injectionRoot = node
+    reject: () ->
+      if @injectionRoot and @injectionNodes instanceof Array
+        @injectionRoot.removeChild(injection) for injection in @injectionNodes
 
-      node.appendChild(contentNode)
+      @injectionNodes = null
+      @injectionRoot  = null
 
-  hashCode: () ->
-    element = @getElement()
+    inject: (node) ->
+      if node and typeof node.nodeType is "number"
+        if @decorator
+          contentNode = @decorator.cloneNode(yes)
 
-    return element.___ui_element_hashCode or= ++Element.hashCodes
+          hashCode = @hashCode()
 
-  setLabel: (label) ->
-    @label = String(label)
+          for child in contentNode.childNodes
+            for span in (span for span in child.getElementsByTagName("span"))
+              switch span.id
+                when "label-place-holder-#{hashCode}"
+                  parent.replaceChild(@getLabel(), span) if parent = span.parentNode
+                when "element-place-holder-#{hashCode}"
+                  parent.replaceChild(@getElement(), span) if parent = span.parentNode
+        else
+          contentNode = @getElement()
 
-  getLabel: () ->
-    label = document.createElement("label")
+        @reject()
 
-    if @label
-      label.appendChild(document.createTextNode(@label))
+        if contentNode.nodeType is 11
+          @injectionNodes = child for child in contentNode.childNodes
+        else
+          @injectionNodes = [contentNode]
 
-    if id = @getAttribute("id")
-      label.setAttribute("for", id)
-      label.htmlFor = id  # for IE
+        @injectionRoot = node
 
-    return label
+        node.appendChild(contentNode)
 
-  getAttribute: (attribute, value) ->
-    element = @getElement()
+    hashCode: () ->
+      element = @getElement()
 
-    switch attribute
-      when "id"
-        return element[attribute]
-      else
-        return element.getAttribute(attribute)
+      return element.___ui_element_hashCode or= ++Element.hashCodes
 
-  setAttribute: (attribute, value) ->
-    element = @getElement()
+    setLabel: (label) ->
+      @label = String(label)
 
-    switch attribute
-      when "id"
-        element[attribute] = value
-      else
-        element.setAttribute(attribute, value)
+    getLabel: () ->
+      label = document.createElement("label")
 
-  getElement: () ->
-    if @element is null and (nodeName = @getNodeName()) isnt null
-      @element = document.createElement(nodeName)
+      if @label
+        label.appendChild(document.createTextNode(@label))
 
-    return @element
+      if id = @getAttribute("id")
+        label.setAttribute("for", id)
+        label.htmlFor = id  # for IE
 
-  @hashCodes: 0
+      return label
 
-  @equalNodeName: (elem, name) ->
-    return elem.nodeName and elem.nodeName.toUpperCase() is name.toUpperCase()
+    getAttribute: (attribute, value) ->
+      element = @getElement()
 
-  @getElementValue: (elem) ->
-    value = @getElementValueText(elem)
+      switch attribute
+        when "id"
+          return element[attribute]
+        else
+          return element.getAttribute(attribute)
 
-    return value unless typeof value is "string"
+    setAttribute: (attribute, value) ->
+      element = @getElement()
 
-    return value if value is ""
+      switch attribute
+        when "id"
+          element[attribute] = value
+        else
+          element.setAttribute(attribute, value)
 
-    return numValue unless isNaN numValue = Number(value.replace(/\s+/g, "").replace(/,/g, "."))
+    getElement: () ->
+      if @element is null and (nodeName = @getNodeName()) isnt null
+        @element = document.createElement(nodeName)
 
-    return value
+      return @element
 
-  @getElementValueText: (elem) ->
-    return unless elem
+    @hashCodes: 0
 
-    if @equalNodeName(elem, "option")
-      # attributes.value is undefined in Blackberry 4.7 but
-      # uses .value. See #6932
-      val = elem.attributes.value;
+    @equalNodeName: (elem, name) ->
+      return elem.nodeName and elem.nodeName.toUpperCase() is name.toUpperCase()
 
-      return elem.value if not val or val.specified
-      return elem.text;
+    @getElementValue: (elem) ->
+      value = @getElementValueText(elem)
 
-    # We need to handle select boxes special
-    if @equalNodeName(elem, "select")
-      index = elem.selectedIndex
+      return value unless typeof value is "string"
 
-      # Nothing was selected
-      return null if index < 0
+      return value if value is ""
 
-      values  = []
-      options = elem.options
-      one     = elem.type is "select-one"
+      return numValue unless isNaN numValue = Number(value.replace(/\s+/g, "").replace(/,/g, "."))
 
-      # Loop through all the selected options
-      fromIndex = if one then index     else 0
-      toIndex   = if one then index + 1 else options.length
+      return value
 
-      for i in [fromIndex ... toIndex]
-        option = options[i]
+    @getElementValueText: (elem) ->
+      return unless elem
 
-        # Don't return options that are disabled or in a disabled optgroup
-        notDisabled = if optDisabled then not option.disabled else option.getAttribute("disabled") is null
-        notDisabledOptGroup = not option.parentNode.disabled or not @equalNodeName(option.parentNode, "optGroup")
+      if @equalNodeName(elem, "option")
+        # attributes.value is undefined in Blackberry 4.7 but
+        # uses .value. See #6932
+        val = elem.attributes.value;
 
-        if option.selected && notDisabled && notDisabledOptGroup
-          # Get the specific value for the option
-          value = @getElementValue(option)
+        return elem.value if not val or val.specified
+        return elem.text;
 
-          # We don't need an array for one selects
-          return value if one
+      # We need to handle select boxes special
+      if @equalNodeName(elem, "select")
+        index = elem.selectedIndex
 
-          # Multi-Selects return an array
-          values.push(value)
+        # Nothing was selected
+        return null if index < 0
 
-      return values;
+        values  = []
+        options = elem.options
+        one     = elem.type is "select-one"
 
-    # Handle the case where in Webkit "" is returned instead of "on" if a value isn't specified
-    if elem.type in ["radio", "checkbox"] and not checkOn
-      return "on" if elem.getAttribute("value") is null
-      return elem.value
+        # Loop through all the selected options
+        fromIndex = if one then index     else 0
+        toIndex   = if one then index + 1 else options.length
 
-    # Everything else, we just grab the value
-    value = (elem.value || "").replace(/\r/g, "")
+        for i in [fromIndex ... toIndex]
+          option = options[i]
 
-    if elem.type in ["text", "textarea"]
-      value = "" if value is elem.title
+          # Don't return options that are disabled or in a disabled optgroup
+          notDisabled = if optDisabled then not option.disabled else option.getAttribute("disabled") is null
+          notDisabledOptGroup = not option.parentNode.disabled or not @equalNodeName(option.parentNode, "optGroup")
 
-    return value
+          if option.selected && notDisabled && notDisabledOptGroup
+            # Get the specific value for the option
+            value = @getElementValue(option)
 
-  @contains: (node, element) ->
-    if node.compareDocumentPosition
-      return (->
-        bitMask = node.compareDocumentPosition(element) & 16
+            # We don't need an array for one selects
+            return value if one
 
-        return bitMask > 0
-      )()
+            # Multi-Selects return an array
+            values.push(value)
 
-    return node.contains(element)
+        return values;
+
+      # Handle the case where in Webkit "" is returned instead of "on" if a value isn't specified
+      if elem.type in ["radio", "checkbox"] and not checkOn
+        return "on" if elem.getAttribute("value") is null
+        return elem.value
+
+      # Everything else, we just grab the value
+      value = (elem.value || "").replace(/\r/g, "")
+
+      if elem.type in ["text", "textarea"]
+        value = "" if value is elem.title
+
+      return value
+
+    @contains: (node, element) ->
+      if node.compareDocumentPosition
+        return (->
+          bitMask = node.compareDocumentPosition(element) & 16
+
+          return bitMask > 0
+        )()
+
+      return node.contains(element)

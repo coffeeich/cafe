@@ -1,4 +1,4 @@
-package "cafe", {
+package "cafe"
 
   Location: class Location
 
@@ -95,5 +95,3 @@ package "cafe", {
 
     @onChangeHash: () ->
       @getInstance().changeHashListeners.push(arguments...)
-
-}

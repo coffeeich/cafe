@@ -1,44 +1,42 @@
 @import "cafe/Location"
 
-package "cafe.module",
+package "cafe.module"
 
-#
-# Абстрактный класс модулей
-# @author Roman.I.Kuzmin roman.i.kuzmin@gmail.com
-#
-Abstract: class Abstract
+  # Абстрактный класс модулей
+  # @author Roman.I.Kuzmin roman.i.kuzmin@gmail.com
+  Abstract: class Abstract
 
-  @defaultAction: "index"
+    @defaultAction: "index"
 
-  @settings:
-    missingAction: "log"
+    @settings:
+      missingAction: "log"
 
-  name: ""
+    name: ""
 
-  # Этот метод должен содержать инструкции по выполнению модуля
-  # Этот метод должен быть переопределен
-  run: () ->
-    settings = @constructor.settings or Abstract.settings
+    # Этот метод должен содержать инструкции по выполнению модуля
+    # Этот метод должен быть переопределен
+    run: () ->
+      settings = @constructor.settings or Abstract.settings
 
-    action = (Location.getAction() or settings.defaultAction or Abstract.defaultAction) + "Action"
+      action = (Location.getAction() or settings.defaultAction or Abstract.defaultAction) + "Action"
 
-    if actionIsMissing = typeof this[action] isnt "function"
+      if actionIsMissing = typeof this[action] isnt "function"
 
-      switch settings.missingAction
-        when "ignore" then break
-        when "log"
-          console.log("Метод " + action + " для модуля " + @name + " не реализован!!!") unless @constructor.ignoreMissingAction
+        switch settings.missingAction
+          when "ignore" then break
+          when "log"
+            console.log("Метод " + action + " для модуля " + @name + " не реализован!!!") unless @constructor.ignoreMissingAction
 
-      return
+        return
 
-    @beforeActionRun()
+      @beforeActionRun()
 
-    results = this[action]()
+      results = this[action]()
 
-    @afterActionRun()
+      @afterActionRun()
 
-    return results
+      return results
 
-  beforeActionRun: () ->
+    beforeActionRun: () ->
 
-  afterActionRun: () ->
+    afterActionRun: () ->

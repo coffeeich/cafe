@@ -1,261 +1,261 @@
-package "cafe",
+package "cafe"
 
-Deferred: class Deferred
-  _state: null
+  Deferred: class Deferred
+    _state: null
 
-  _delay: 0
+    _delay: 0
 
-  _chain: null
+    _chain: null
 
-  _results: null
+    _results: null
 
-  _errorTimeoutId: null
+    _errorTimeoutId: null
 
-  __chained: false
+    __chained: false
 
-  constructor: () ->
-    @_state = Deferred.States.Ready
+    constructor: () ->
+      @_state = Deferred.States.Ready
 
-    @_chain = []
+      @_chain = []
 
-    @_results = [null, null]
+      @_results = [null, null]
 
-  callback: (result) ->
-    @_check(result)
+    callback: (result) ->
+      @_check(result)
 
-    @_state = Deferred.States.Success
+      @_state = Deferred.States.Success
 
-    @_resultBack(result)
+      @_resultBack(result)
 
-  errorback: (error) ->
-    @_check(error)
+    errorback: (error) ->
+      @_check(error)
 
-    error = new Error(error || "Unknown error") if not (error instanceof Error) and error isnt null
+      error = new Error(error || "Unknown error") if not (error instanceof Error) and error isnt null
 
-    @_state = Deferred.States.Error
+      @_state = Deferred.States.Error
 
-    @_resultBack(error)
+      @_resultBack(error)
 
-  addBoth: (context, fn) ->
-    argv = arguments
+    addBoth: (context, fn) ->
+      argv = arguments
 
-    if argv.length < 2
-      fn = argv[0]
+      if argv.length < 2
+        fn = argv[0]
 
-      return @addCallbacks(fn, fn)
+        return @addCallbacks(fn, fn)
 
-    return @addCallbacks(context, fn, fn)
-
-
-  addCallback: (context, fn) ->
-    argv = arguments
-
-    if argv.length < 2
-      return @addCallbacks(argv[0], null)
-
-    return @addCallbacks(context, fn, null)
+      return @addCallbacks(context, fn, fn)
 
 
-  addErrorback: (context, fn) ->
-    argv = arguments
+    addCallback: (context, fn) ->
+      argv = arguments
 
-    if argv.length < 2
-      return @addCallbacks(null, argv[0])
+      if argv.length < 2
+        return @addCallbacks(argv[0], null)
 
-    return @addCallbacks(context, null, fn)
+      return @addCallbacks(context, fn, null)
 
 
-  addCallbacks: (context, callBack, errorBack) ->
-    throw new Error("Chained Deferreds can not be re-used") if @__chained
+    addErrorback: (context, fn) ->
+      argv = arguments
 
-    argv = arguments
+      if argv.length < 2
+        return @addCallbacks(null, argv[0])
 
-    if argv.length < 3
-      errorBack = argv[1]
-      callBack  = argv[0]
-    else if context
-      if typeof callBack is "function"
-        callBack = ((fn) ->
-          return () ->
-            return fn.apply(context, arguments)
-        )(callBack)
+      return @addCallbacks(context, null, fn)
 
-      if typeof errorBack is "function"
-        errorBack = ((fn) ->
-          return () ->
-            return fn.apply(context, arguments)
-        )(errorBack)
 
-    @_chain.push([callBack, errorBack])
+    addCallbacks: (context, callBack, errorBack) ->
+      throw new Error("Chained Deferreds can not be re-used") if @__chained
 
-    @_fire() unless @_state is Deferred.States.Ready
+      argv = arguments
 
-    return this
+      if argv.length < 3
+        errorBack = argv[1]
+        callBack  = argv[0]
+      else if context
+        if typeof callBack is "function"
+          callBack = ((fn) ->
+            return () ->
+              return fn.apply(context, arguments)
+          )(callBack)
 
-  _resultBack: (result) ->
-    @_results[@_state] = result
+        if typeof errorBack is "function"
+          errorBack = ((fn) ->
+            return () ->
+              return fn.apply(context, arguments)
+          )(errorBack)
 
-    @_fire()
+      @_chain.push([callBack, errorBack])
 
-  _check: (object) ->
-    throw new Error("Already fired") unless @_state is Deferred.States.Ready
-    throw new Error("Deferred instances can only be chained if they are the result of a callback") if object instanceof Deferred
+      @_fire() unless @_state is Deferred.States.Ready
 
-  _paused: () ->
-    return @_delay isnt 0
+      return this
 
-  _fire: () ->
-    clearTimeout(@_errorTimeoutId) and @_errorTimeoutId = null unless @_errorTimeoutId is null
-
-    return if @_paused()
-
-    state  = @_state
-    result = @_results[state]
-
-    try
-      pairs = @_chain
-
-      while pair = pairs.shift()
-        fn = pair[state]
-
-        if fn
-          try
-            result = fn(result)
-
-            state = Deferred.States.Success
-
-            if result instanceof Deferred
-              @_delay++
-
-              break
-          catch ex
-            state = Deferred.States.Error
-
-            result = ex
-
-      if @_paused() && result instanceof Deferred
-        result.addCallbacks(
-          (res) =>
-            @_delay--
-
-            @_state = Deferred.States.Success
-
-            @_resultBack(res)
-          (err) =>
-            @_delay--
-
-            @_state = Deferred.States.Error
-
-            @_resultBack(err)
-        )
-
-        result.__chained = true
-
-        return
-
-      @_state = state
-
+    _resultBack: (result) ->
       @_results[@_state] = result
 
-      if @_state is Deferred.States.Error
-        @_errorTimeoutId = setTimeout(
-          () =>
-            console.error("Unhandled error in Deferred (possibly?):")
-            console.error(@_results[@_state])
-          1000
-        )
-    catch ex
-      throw ex
-    finally
-      result = null
+      @_fire()
 
-  @States: {
-    Ready   : -1
-    Success : 0
-    Error   : 1
-  }
+    _check: (object) ->
+      throw new Error("Already fired") unless @_state is Deferred.States.Ready
+      throw new Error("Deferred instances can only be chained if they are the result of a callback") if object instanceof Deferred
 
-  @succeed: (result, timeout) ->
-    deferred = new Deferred()
+    _paused: () ->
+      return @_delay isnt 0
 
-    if timeout > 0
-      setTimeout((-> deferred.callback(result)), 10) # ie hack
-    else
-      deferred.callback(result)
+    _fire: () ->
+      clearTimeout(@_errorTimeoutId) and @_errorTimeoutId = null unless @_errorTimeoutId is null
 
-    return deferred
+      return if @_paused()
 
-  @fail: (error) ->
-    deferred = new Deferred()
+      state  = @_state
+      result = @_results[state]
 
-    if timeout > 0
-      setTimeout((-> deferred.errorback(error)), 10) # ie hack
-    else
-      deferred.errorback(error)
+      try
+        pairs = @_chain
 
-    return deferred
+        while pair = pairs.shift()
+          fn = pair[state]
 
-  @processing: () ->
-    deferred = Deferred.succeed()
+          if fn
+            try
+              result = fn(result)
 
-    processes = if arguments.length is 1 && arguments[0] instanceof Array then arguments[0].slice() else Array.prototype.slice.call(arguments)
+              state = Deferred.States.Success
 
-    deferred.addCallback(getProcessCallback(process)) for process in processes
+              if result instanceof Deferred
+                @_delay++
 
-    return deferred
+                break
+            catch ex
+              state = Deferred.States.Error
 
-getChainCallback = (results, value) ->
-  unless value instanceof Deferred
-    return () ->
-      results.push(value)
-      return value
+              result = ex
 
-  value.addCallback (result) ->
-    results.push(result)
-    return result
+        if @_paused() && result instanceof Deferred
+          result.addCallbacks(
+            (res) =>
+              @_delay--
 
-  return value
+              @_state = Deferred.States.Success
 
-getProcessCallback = (process) ->
-  return (lastResult) ->
-    current = new Deferred()
+              @_resultBack(res)
+            (err) =>
+              @_delay--
 
-    try
-      res = if typeof process is "function" then process(lastResult) else process
+              @_state = Deferred.States.Error
 
-      if res instanceof Deferred
-        res.addCallback (result) ->
-          current.callback(result)
-          return result
+              @_resultBack(err)
+          )
 
-        res.addErrorback (error) ->
-          current.errorback(error)
-          return null
+          result.__chained = true
 
-      else if res instanceof Array
-        count = res.length
+          return
 
-        if count is 0
-          current.callback(res)
-        else
-          results = []
+        @_state = state
 
-          deferredCollection = getChainCallback(results, res[i]) for i in [0...count]
+        @_results[@_state] = result
 
-          Deferred.processing(deferredCollection).
+        if @_state is Deferred.States.Error
+          @_errorTimeoutId = setTimeout(
+            () =>
+              console.error("Unhandled error in Deferred (possibly?):")
+              console.error(@_results[@_state])
+            1000
+          )
+      catch ex
+        throw ex
+      finally
+        result = null
 
-            addCallback((result) ->
-              current.callback(results)
-              return result
-            ).
+    @States: {
+      Ready   : -1
+      Success : 0
+      Error   : 1
+    }
 
-            addErrorback((error) ->
-              current.errorback(error)
-              return null
-            )
+    @succeed: (result, timeout) ->
+      deferred = new Deferred()
+
+      if timeout > 0
+        setTimeout((-> deferred.callback(result)), 10) # ie hack
       else
-        current.callback(res)
-    catch ex
-      current.errorback(ex)
+        deferred.callback(result)
 
-    return current
+      return deferred
+
+    @fail: (error) ->
+      deferred = new Deferred()
+
+      if timeout > 0
+        setTimeout((-> deferred.errorback(error)), 10) # ie hack
+      else
+        deferred.errorback(error)
+
+      return deferred
+
+    @processing: () ->
+      deferred = Deferred.succeed()
+
+      processes = if arguments.length is 1 && arguments[0] instanceof Array then arguments[0].slice() else Array.prototype.slice.call(arguments)
+
+      deferred.addCallback(getProcessCallback(process)) for process in processes
+
+      return deferred
+
+  getChainCallback = (results, value) ->
+    unless value instanceof Deferred
+      return () ->
+        results.push(value)
+        return value
+
+    value.addCallback (result) ->
+      results.push(result)
+      return result
+
+    return value
+
+  getProcessCallback = (process) ->
+    return (lastResult) ->
+      current = new Deferred()
+
+      try
+        res = if typeof process is "function" then process(lastResult) else process
+
+        if res instanceof Deferred
+          res.addCallback (result) ->
+            current.callback(result)
+            return result
+
+          res.addErrorback (error) ->
+            current.errorback(error)
+            return null
+
+        else if res instanceof Array
+          count = res.length
+
+          if count is 0
+            current.callback(res)
+          else
+            results = []
+
+            deferredCollection = getChainCallback(results, res[i]) for i in [0...count]
+
+            Deferred.processing(deferredCollection).
+
+              addCallback((result) ->
+                current.callback(results)
+                return result
+              ).
+
+              addErrorback((error) ->
+                current.errorback(error)
+                return null
+              )
+        else
+          current.callback(res)
+      catch ex
+        current.errorback(ex)
+
+      return current

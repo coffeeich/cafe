@@ -1,9 +1,9 @@
-package "cafe.event",
+package "cafe.event"
 
-Observable: class Observable
+  Observable: class Observable
 
-  addListener: (event, callback) ->
+    addListener: (event, callback) ->
 
-  removeListener: (event, callback) ->
+    removeListener: (event, callback) ->
 
-  notifyListeners: (event) ->
+    notifyListeners: (event) ->

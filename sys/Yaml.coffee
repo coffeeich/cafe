@@ -15,7 +15,8 @@ console.log(
 )
 
 ###
-package "cafe.sys", {
+
+package "cafe.sys"
 
   Yaml: class Yaml
 
@@ -227,5 +228,3 @@ package "cafe.sys", {
       console.log tokens
 
       return @parseTokens(tokens.slice())
-
-}
