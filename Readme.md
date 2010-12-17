@@ -29,5 +29,4 @@
 
 # Bugs?!
 
-  To suggest a feature, report a bug, or general discussion:
-    [http://github.com/ich/cafe/issues](http://github.com/ich/cafe/issues)
+  Feature, bugs post on [issues](http://github.com/ich/cafe/issues)
