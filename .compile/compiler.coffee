@@ -46,7 +46,7 @@ exports.Compiler = class Compiler
 
     @printer.print(
       '''
-      
+
       Usage: cafe [options] path/to/script.coffee
 
       Available options:
@@ -172,7 +172,7 @@ exports.Compiler = class Compiler
 
       @printer.print("ok\n" ) if @printer
 
-  @version: "0.1.0"
+  @version: "0.1.2"
 
   @options: [
     ["-s", "--save",    "Compile to JavaScript and save as .js files"]
