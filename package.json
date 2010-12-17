@@ -1,7 +1,7 @@
 {
   "name": "cafe",
   "description": "Full power of coffee beans",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "homepage": "http://ich.github.com/cafe",
   "author": "Roman I. Kuzmin",
   "main": "./.compile/cafe",
