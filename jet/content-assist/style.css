@@ -120,10 +120,10 @@
 .cafe-jet-content-assist-proposal-selected span {
   color: #ffa500;
 }
-
+/*
 .cafe-jet-content-assist-viewer-processing {
   background: url("ajax-loader.gif") no-repeat scroll right top
-}
+}*/
 
 /** neat scrollbars for Webkit */
 .cafe-jet-content-assist-popup-content::-webkit-scrollbar {
