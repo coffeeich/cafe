@@ -4,14 +4,15 @@ childProcess = require("child_process")
 
 exports.Compiler = class Compiler
 
-  coffee    : null
-  options   : null
-  printer   : null
-  allow     : true
-  filePath  : ""
-  configPath: ""
+  coffee      : null
+  cafeLibPath : null
+  options     : null
+  printer     : null
+  allow       : true
+  filePath    : ""
+  configPath  : ""
 
-  constructor: (@coffee, @options) ->
+  constructor: (@coffee, @cafeLibPath, @options) ->
     @options.help = on if @options.arguments.length is 0
 
     @filePath = fileSystem.realpathSync(filePath) if filePath = @options.arguments.join(" ").trim()
@@ -131,13 +132,13 @@ exports.Compiler = class Compiler
 
     build = require("./build")
 
-    parser = new build.Import(require("path").dirname(@filePath), @coffee)
+    parser = new build.Import(require("path").dirname(@filePath), @cafeLibPath, @coffee)
 
     code = parser.parse(code)
 
     extenders = require("./extenders")
 
-    parser = new extenders.Parser(@coffee)
+    parser = new extenders.Parser(require("path").dirname(@filePath), @cafeLibPath, @coffee)
 
     code = parser.parse(code)
 
@@ -172,7 +173,7 @@ exports.Compiler = class Compiler
 
       @printer.print("ok\n" ) if @printer
 
-  @version: "0.1.3"
+  @version: "0.1.4"
 
   @options: [
     ["-s", "--save",    "Compile to JavaScript and save as .js files"]

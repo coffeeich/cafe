@@ -2,14 +2,13 @@ fs = require("fs")
 
 exports.Import = class Import
   fileDir: null
+  cafeLibPath: null
   regexp : /(.*?)@import\s+("|')(.+?)('|")/g
   imported: null
   coffee  : null
 
-  constructor: (fileDir, coffee) ->
-    @fileDir = fileDir
+  constructor: (@fileDir, @cafeLibPath, @coffee) ->
     @imported = {}
-    @coffee = coffee
 
   parse: (code) ->
     code = @doImport(code)
@@ -28,35 +27,37 @@ exports.Import = class Import
 
           shiftLeft = (" " for i in before).join("");
 
+          rootDir = if path.indexOf("cafe/") is 0 then @cafeLibPath else @fileDir
+
           content = []
           if (/\/\*$/).test(path)
             path = path.replace(/\/\*$/, "")
 
-            for fileName in @getFilesList(path)
-              content.push(string) if (/\.coffee$/).test(fileName) and (string = @findContent( path + "/" + fileName.replace(/\.coffee$/, ""), shiftLeft, ""))
+            for fileName in @getFilesList(rootDir, path)
+              content.push(string) if (/\.coffee$/).test(fileName) and (string = @findContent(rootDir, path + "/" + fileName.replace(/\.coffee$/, ""), shiftLeft, ""))
 
           else
-            content.push(string) if string = @findContent(path, shiftLeft, path.split('/').pop())
+            content.push(string) if string = @findContent(rootDir, path, shiftLeft, path.split('/').pop())
 
           return before + content.join("\n" + shiftLeft)
       )
 
     ).join("\n")
 
-  getFilesList: (path) ->
+  getFilesList: (rootDir, path) ->
     try
-      list = fs.readdirSync(@findPath(@fileDir, path))
+      list = fs.readdirSync(@findPath(rootDir, path))
     catch ex
-      unless @fileDir
+      unless rootDir
         list = []
       else
-        fileDir  = @fileDir
+        fileDir  = rootDir
 
-        @fileDir = @fileDir.split("/").slice(0, -1).join("/")
+        rootDir = rootDir.split("/").slice(0, -1).join("/")
 
-        list     = @getFilesList(path)
+        list     = @getFilesList(rootDir, path)
 
-        @fileDir = fileDir
+        rootDir = fileDir
 
     return list
 
@@ -67,8 +68,8 @@ exports.Import = class Import
     catch ex
       return false
 
-  findContent: (originalPath, shift, className) ->
-    path = @findPath(@fileDir, originalPath)
+  findContent: (rootDir, originalPath, shift, className) ->
+    path = @findPath(rootDir, originalPath)
 
     unless className
       return "" if path is null or path of @imported
@@ -76,14 +77,14 @@ exports.Import = class Import
     return "`var #{className} = __imported['#{originalPath}']`" if path is null or path of @imported
 
     if not @coffeeExist(path)
-      if @fileDir
-        fileDir  = @fileDir
+      if rootDir
+        fileDir  = rootDir
 
-        @fileDir = @fileDir.split("/").slice(0, -1).join("/")
+        rootDir  = rootDir.split("/").slice(0, -1).join("/")
 
-        content  = @findContent(originalPath, shift, className)
+        content  = @findContent(rootDir, originalPath, shift, className)
 
-        @fileDir = fileDir
+        rootDir = fileDir
 
         return content
 
@@ -117,10 +118,13 @@ exports.Import = class Import
 
     return content
 
-  findPath: (dir, lo) ->
+  findPath: (fileDir, lo) ->
     return lo if lo.charAt(0) is "/"
 
     lo = lo.replace(/\/+$/, "")
+
+    dir = fileDir
+
     dir += "/"
 
     loopFind = (dir, lo) ->

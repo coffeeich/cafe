@@ -3,10 +3,11 @@ fs = require("fs")
 coffeeDir = __dirname
 
 exports.Parser = class Parser
-  coffee   : null
+  fileDir: null
+  cafeLibPath: null
+  coffee : null
 
-  constructor: (coffee) ->
-    @coffee = coffee
+  constructor: (@fileDir, @cafeLibPath, @coffee) ->
 
   parse: (code) ->
     included = {}
@@ -16,10 +17,12 @@ exports.Parser = class Parser
 
       if regexp.test(code)
         if coffee.method
-          code = code.replace(regexp,  ->
+          code = code.replace(regexp,  =>
             return coffee.method unless match = coffee.match
 
-            return coffee.method + RegExp["$" + match]
+            match = [match] if match not instanceof Array
+
+            return coffee.method + ((if coffee.workout and m of coffee.workout then coffee.workout[m]?(this, RegExp["$" + m]) else RegExp["$" + m]) for m in match).join("")
           )
 
         continue if coffee.script of included
@@ -39,23 +42,34 @@ exports.Parser = class Parser
 
     return code
 
-  @extras: {
-    "package(\\s+|\\()": {
+  @stylesheets: null
+
+  @extras:
+    "package(\\s+|\\()":
       match  : 1
       method : "__package"
       script : "extenders/package.coffee"
-    }
-    "console\\.(log|error|warn|info)": {
+
+    "console\\.(log|error|warn|info)":
       match  : 1
       method : "__logger."
       script : "extenders/logger.coffee"
-    }
-    "\\.([\\s\\n\\t])*trim\\(\\)": {
-      match  : 0
+
+    "\\.([\\s\\n\\t])*trim\\(\\)":
       script : "extenders/prototype/String/trim.coffee"
-    }
-    "\\.([\\s\\n\\t])*indexOf\\(": {
-      match  : 0
+
+    "\\.([\\s\\n\\t])*indexOf\\(":
       script : "extenders/prototype/Array/indexOf.coffee"
-    }
-  }
+
+    "@stylesheet(\\s+|\\()(\"|')(.+?)('|\")":
+      match  : [1 ,3]
+      workout:
+        3 : (parser, path) ->
+          Parser.stylesheets or = require("./stylesheets")
+
+          rootDir = if path.indexOf("cafe/") is 0 then parser.cafeLibPath else parser.fileDir
+
+          Parser.stylesheets.StyleSheet.fetchAsString(rootDir, path, '"')
+
+      method : "__stylesheet"
+      script : "extenders/stylesheet.coffee"

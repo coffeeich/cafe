@@ -361,7 +361,22 @@ package "cafe.services"
         onreadystatechange();
       }`
 
+      @currentXHR = xhr;
+
+      @deferred.
+        addCallback((data) =>
+          @currentXHR = null
+          return data
+        ).
+        addErrorback((error) =>
+          @currentXHR = null
+          throw error
+        )
+
       return @deferred
+
+    abort: () ->
+      @currentXHR.abort() if @currentXHR
 
     setType: (type) ->
       @type = type

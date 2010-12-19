@@ -26,6 +26,8 @@ package "cafe.services"
     # @type string
     dataType: "json"
 
+    ajax: null
+
     # Конструктор
     # @param  string  api     корень API
     # @param  int     timeout таймаут перед запросом
@@ -41,16 +43,33 @@ package "cafe.services"
     # Инициализация вызова удаленного метода
     # @return cafe.Deferred
     call: (method, get, post) ->
-      ajax = new Ajax()
+      @ajax = new Ajax()
 
-      ajax.setType(@type)
-      ajax.setUrl("/" + @api + "/" + method)
-      ajax.setTimeout(@timeout)
-      ajax.setPostData(post)
-      ajax.setParameters(@get, get)
-      ajax.setDataType(@dataType)
+      @ajax.setType(@type)
+      @ajax.setUrl("/" + @api + "/" + method)
+      @ajax.setTimeout(@timeout)
+      @ajax.setPostData(post)
+      @ajax.setParameters(@get, get)
+      @ajax.setDataType(@dataType)
 
-      return ajax.call()
+      deferred = @ajax.call()
+
+      deferred.
+        addCallback((data) =>
+          @ajax = null
+          return data
+        ).
+        addErrorback((error) =>
+          @ajax = null
+          throw error
+        )
+
+      return deferred
+
+    abort: ()->
+      if @ajax
+        @ajax.abort()
+        @ajax = null
 
     # Установка типа данных, ожидаемый с сервера
     # @param string dataType

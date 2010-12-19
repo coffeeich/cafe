@@ -10,7 +10,7 @@ require.paths.unshift(
   )
 );
 
-exec("which coffee", function(error, stdOutput, stdError) {
+exec("which coffee && which cafe", function(error, stdOutput, stdError) {
   if (stdError) {
     console.log(stdError);
   }
@@ -23,16 +23,21 @@ exec("which coffee", function(error, stdOutput, stdError) {
     return;
   }
 
-  var coffeePath = fs.realpathSync(stdOutput.trim());
+  var pare = stdOutput.trim().replace(/\n/g, " ").split(/\s+/);
 
-  var libPath = path.normalize(path.dirname(coffeePath) + "/../lib/node/coffee-script");
+  var coffeePath = fs.realpathSync(pare[0]);
+  var cafePath   = fs.realpathSync(pare[1]);
 
-  var coffee       = require(libPath);
-  var OptionParser = require(libPath + "/optparse").OptionParser;
+  var coffeeLibPath = path.normalize(path.dirname(coffeePath) + "/../lib/node/coffee-script");
+  var cafeLibPath   = path.normalize(path.dirname(cafePath)   + "/../lib");
+
+  var coffee       = require(coffeeLibPath);
+  var OptionParser = require(coffeeLibPath + "/optparse").OptionParser;
   var Compiler     = require("compiler").Compiler
 
   var compiler = new Compiler(
     coffee,
+    cafeLibPath,
     new OptionParser(Compiler.options,"").parse(process.argv.slice(2))
   );
 

@@ -179,7 +179,7 @@ package "cafe"
       deferred = new Deferred()
 
       if timeout > 0
-        setTimeout((-> deferred.callback(result)), 10) # ie hack
+        setTimeout((-> deferred.callback(result)), timeout)
       else
         deferred.callback(result)
 
@@ -189,7 +189,7 @@ package "cafe"
       deferred = new Deferred()
 
       if timeout > 0
-        setTimeout((-> deferred.errorback(error)), 10) # ie hack
+        setTimeout((-> deferred.errorback(error)), timeout)
       else
         deferred.errorback(error)
 
@@ -205,7 +205,7 @@ package "cafe"
       return deferred
 
   getChainCallback = (results, value) ->
-    unless value instanceof Deferred
+    if value not instanceof Deferred
       return () ->
         results.push(value)
         return value
@@ -240,13 +240,13 @@ package "cafe"
           else
             results = []
 
-            deferredCollection = getChainCallback(results, res[i]) for i in [0...count]
+            deferredCollection = (getChainCallback(results, res[i]) for i in [0...count])
 
             Deferred.processing(deferredCollection).
 
               addCallback((result) ->
                 current.callback(results)
-                return result
+                return results
               ).
 
               addErrorback((error) ->
