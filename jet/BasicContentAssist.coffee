@@ -360,19 +360,23 @@ class TextViewer
 
     # watch for content modification
     # if we think it was modified, we'll send special "modify" event
-    Event.add(textarea, 'input paste change keyup', (evt) =>
-      try
-        return if @modifiedEventPrevented
+    Event.add(textarea, 'paste change keyup', (evt) =>
+      setTimeout(
+        =>
+          try
+            return if @modifiedEventPrevented
 
-        val = textarea.value
+            val = textarea.value
 
-        if val.length isnt last_length or val isnt last_value
-          @dispatcher.dispatchEvent('modify')
+            if val.length isnt last_length or val isnt last_value
+              @dispatcher.dispatchEvent('modify')
 
-          last_length = val.length
-          last_value  = val
-      finally
-        @modifiedEventPrevented = false
+              last_length = val.length
+              last_value  = val
+          finally
+            @modifiedEventPrevented = false
+        10
+      )
     )
 
     Event.add(window, 'focus resize', (evt) => @updateMeasurerSize() )
@@ -401,7 +405,12 @@ TextViewer.prototype = {
       measurer.style[Utils.toCamelCase(prop)] = css_props[prop];
     }
 
-    textarea.parentNode.appendChild(measurer);
+    if (textarea.parentNode.nodeName == "P") {
+      textarea.parentNode.parentNode.appendChild(measurer);
+    } else {
+      textarea.parentNode.appendChild(measurer);
+    }
+
     return measurer;
   },
 
@@ -863,7 +872,7 @@ ContentAssistProcessor.prototype = {
           var result2 = [];
           for (var i = 0, il = result.length; i < il; i++) {
             var word = result[i];
-            if (word.length > prefix_len) {
+            if (word.toString().length > prefix_len) {
               result2.push(word);
             }
           }
@@ -943,7 +952,7 @@ class CompletionProposal
     proposal = document.createElement('div')
     proposal.className = 'cafe-jet-content-assist-proposal'
 
-    if node = @generator(word, displayString)
+    if node = @generator(word, displayString, @str.valueOf())
       proposal.appendChild(if typeof node is "string" then document.createTextNode(node) else node)
 
     return proposal
@@ -1209,12 +1218,16 @@ package "cafe.jet"
           this.popup.style.top = y + 'px';
           this.popup.style.width = '';
 
+          // this need to measure size of content
+          this.popup_content.style.position = "absolute";
+
           // make some adjustments so popup won't appear outside the TextViewer box
           var elem = this.viewer.getElement();
           x = Math.min(elem.offsetLeft + elem.offsetWidth - this.popup.offsetWidth, x);
           this.popup.style.left = x + 'px';
 
           this.popup.style.width = this.popup_content.offsetWidth + 'px';
+          this.popup_content.style.position = "";
 
           this.is_visible = true;
           this.lockHover();
