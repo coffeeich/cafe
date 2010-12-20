@@ -23,3 +23,6 @@ package "cafe.jet"
       )
 
     setKey: (@key) ->
+
+    setVisibleItemsCount: (count) ->
+      @content_assist.setOptions(visible_items: count)
