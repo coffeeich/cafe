@@ -729,7 +729,7 @@ ContentAssistProcessor.prototype = {
 
           for (var i = 0, il = suggestions.length; i < il; i++) {
             var s = suggestions[i];
-            var proposal = this.completitionProposalFactory(cur_word, s, offset - cur_word.length, right_bound - cur_offset - 1, offset - cur_word.length + s.length);
+            var proposal = this.completitionProposalFactory(cur_word, s, offset - cur_word.length, right_bound - cur_offset - 1, offset - cur_word.length + s.toString().length);
             proposals.push(proposal);
           }
         }
