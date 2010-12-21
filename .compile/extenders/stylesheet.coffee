@@ -3,7 +3,7 @@ __stylesheet = (cssText, media) ->
     stylesheet = document.createStyleSheet()
 
     stylesheet.rel   = "stylesheet"
-    stylesheet.media = media
+    stylesheet.media = media  if media
 
     stylesheet.cssText = cssText
   else
@@ -11,7 +11,7 @@ __stylesheet = (cssText, media) ->
 
     stylesheet.type  = "text/css"
     stylesheet.rel   = "stylesheet"
-    stylesheet.media = media
+    stylesheet.media = media  if media
 
     stylesheet.appendChild(document.createTextNode(cssText))
 

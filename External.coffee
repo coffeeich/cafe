@@ -19,7 +19,7 @@ package "cafe"
               ->
                 Deferred.processing(
                   for file in files
-                    =>
+                    ->
                       return External.deferred[file] if file of External.deferred
 
                       if (/^http:\/\//).test(dir)
@@ -46,3 +46,4 @@ package "cafe"
 
       return (callback) ->
         process.addCallback(callback)
+
