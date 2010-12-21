@@ -61,7 +61,7 @@ exports.Parser = class Parser
     "\\.([\\s\\n\\t])*indexOf\\(":
       script : "extenders/prototype/Array/indexOf.coffee"
 
-    "@stylesheet(\\s+|\\()(\"|')(.+?)('|\")":
+    "~stylesheet(\\s+|\\()(\"|')(.+?)('|\")":
       match  : [1 ,3]
       workout:
         3 : (parser, path) ->

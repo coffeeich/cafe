@@ -1,8 +1,7 @@
 @import "cafe/Deferred"
 @import "cafe/Event"
 
-@stylesheet "cafe/jet/content-assist/default", "all"
-
+~stylesheet "cafe/jet/content-assist/default", "all"
 
 # @author Sergey Chikuyonok (serge.che@gmail.com)
 # @link http://chikuyonok.ru
