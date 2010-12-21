@@ -1,5 +1,6 @@
 @import "cafe/Deferred"
 @import "cafe/Event"
+@import "cafe/event/Observable"
 
 ~stylesheet "cafe/jet/content-assist/default", "all"
 
@@ -190,104 +191,6 @@ Utils =
 
     return result[Utils.toCamelCase(name)];
 
-# @author     Matthew Foster
-# @date    June 6th 2007
-# @purpose    To have a base class to extend subclasses from to inherit event dispatching functionality.
-# @procedure  Use a hash of event "types" that will contain an array of functions to execute.  The logic is if any function explicitally returns false the chain will halt execution.
-class EventDispatcher
-
-  listenerChain: null
-  onlyOnceChain: null
-
-  buildListenerChain : ()->
-    @listenerChain = {} unless @listenerChain
-    @onlyOnceChain = {} unless @onlyOnceChain
-
-  # Добавляет слушатель события
-  # @param String type Название события
-  # @param Function listener Слушатель
-  # @param Boolean only_once Подписаться на событие только один раз
-  addEventListener : (type, listener, only_once)->
-    throw new Error("Listener isn't a function" ) unless typeof listener is "function"
-
-    @buildListenerChain()
-
-    chain = if only_once then @onlyOnceChain else this.listenerChain
-
-    types = type.split?(" ") or type
-
-    return if types not instanceof Array
-
-    for type in types
-      unless type of chain
-        chain[type] = [listener]
-      else
-        chain[type].push(listener)
-
-  # Проверяет, есть ли у такого события слушатели
-  # @param String type Название события
-  # @return Boolean
-  hasEventListener : (type)->
-    return type of @listenerChain or type of @onlyOnceChain
-
-  # Удаляет слушатель события
-  # @param String type Название события
-  # @param Function listener Слушатель, который нужно удалить
-  removeEventListener : (type, listener)->
-    return false unless @hasEventListener(type)
-
-    chains = [@listenerChain, @onlyOnceChain]
-
-    for chain in chains
-      continue unless type of chain
-
-      list = chain[type]
-
-      for item, index in list
-        list.splice(index, 1) if item is listener
-
-    return true
-
-  # Инициирует событие
-  # @param String type Название события
-  # @param Object args Дополнительные данные, которые нужно передать слушателю
-  # @return Boolean
-  dispatchEvent : (type, args)->
-    @buildListenerChain()
-
-    return false unless @hasEventListener(type)
-
-    chains = [@listenerChain, @onlyOnceChain]
-
-    evt = new CustomEvent(type, this, args)
-
-    for chain in chains
-      continue unless type of chain
-
-      list = chain[type]
-
-      for item in list
-        item.call(null, evt)
-
-    delete this.onlyOnceChain[type] if type of @onlyOnceChain
-
-    return true
-
-# Произвольное событие. Создается в EventDispatcher и отправляется всем слушателям
-# @author Sergey Chikuyonok (serge.che@gmail.com)
-# @link http://chikuyonok.ru
-#
-# @require EventDispatcher
-class CustomEvent
-  type  : null
-  target: null
-
-  # @param {String} type Тип события
-  # @param {Object} target Объект, который инициировал событие
-  # @param {Object} data Дополнительные данные
-  constructor: (@type, @target, data)->
-    @data = data if data?
-
 # Stores and revalidetes text line heights. The problem of getting line
 # height is that a single line could be spanned across multiple lines.
 # It this case we can't use <code>line-height</code> CSS property, we
@@ -341,7 +244,7 @@ class LineCacher
     @lines = []
 
 
-class TextViewer
+class TextViewer extends Observable
 
   # @param Element textarea
   constructor: (@textarea) ->
@@ -349,7 +252,6 @@ class TextViewer
 
     @updateMeasurerSize()
 
-    @dispatcher  = new EventDispatcher()
     @line_cacher = new LineCacher(@_measurer)
 
     @modifiedEventPrevented = false
@@ -368,7 +270,7 @@ class TextViewer
             val = textarea.value
 
             if val.length isnt last_length or val isnt last_value
-              @dispatcher.dispatchEvent('modify')
+              @notifyListeners('modify')
 
               last_length = val.length
               last_value  = val
@@ -380,8 +282,7 @@ class TextViewer
 
     Event.add(window, 'focus resize', (evt) => @updateMeasurerSize() )
 
-`
-TextViewer.prototype = {
+TextViewer.prototype[name] = method for name, method of `{
   /**
    * Creates text measurer for textarea
    * @param {Element} textarea
@@ -625,7 +526,6 @@ TextViewer.prototype = {
       end = start;
     }
 
-
     this.textarea.value = content.substring(0, start) + text + content.substring(end);
   },
 
@@ -635,7 +535,7 @@ TextViewer.prototype = {
 
     for (var i = 0, il = items.length; i < il; i++) {
       if (items[i].toLowerCase() == 'modify') {
-        this.dispatcher.addEventListener('modify', fn);
+        this.addListener('modify', fn);
       } else {
         Event.add(elem, type, fn);
       }
@@ -648,7 +548,7 @@ TextViewer.prototype = {
 
     for (var i = 0, il = items.length; i < il; i++) {
       if (items[i].toLowerCase() == 'modify') {
-        this.dispatcher.removeEventListener('modify', fn);
+        this.removeListener('modify', fn);
       } else {
         Event.remove(elem, type, fn);
       }
@@ -966,7 +866,7 @@ package "cafe.jet"
   #
   # @author Sergey Chikuyonok (serge.che@gmail.com)
   # @link http://chikuyonok.ru
-  BasicContentAssist: class BasicContentAssist
+  BasicContentAssist: class BasicContentAssist extends Observable
 
     viewer        : null
     processor     : null
@@ -976,6 +876,16 @@ package "cafe.jet"
       @viewer         = new TextViewer(textarea)
       @processor      = new ContentAssistProcessor(words)
       @content_assist = new ContentAssist(@viewer, @processor, options)
+
+      @content_assist.onApplyProposal = () =>
+        @notifyListeners("select")
+
+    getSelectedProposal: () ->
+      ix = @content_assist.selected_proposal
+
+      return @content_assist.last_proposals[ix] if @content_assist.popup_content.childNodes[ix]
+
+      return null
 
     setProposalHTMLGenerator: (generator) ->
       @processor.setProposalHTMLGenerator(generator)
@@ -1209,6 +1119,7 @@ package "cafe.jet"
         applyProposal: function(ix) {
           if (this.popup_content.childNodes[ix]) {
             this.last_proposals[ix].apply(this.viewer);
+            this.onApplyProposal();
           }
         },
 

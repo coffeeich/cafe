@@ -40,17 +40,10 @@ package "cafe"
         # otherwise set the cancelBubble property of the original event to true (IE)
         e.cancelBubble = yes
 
-    stopImmediatePropagation: () ->
-      @isImmediatePropagationStopped = -> yes
-      @stopPropagation()
-
     isDefaultPrevented: () ->
       return no
 
     isPropagationStopped: () ->
-      return no
-
-    isImmediatePropagationStopped: () ->
       return no
 
     @fix: (event) ->
@@ -115,13 +108,27 @@ package "cafe"
     @hashCodes: 0
 
     @dispatch: (elem, event) ->
+      isObservable = elem instanceof cafe.event.Observable if cafe.event?.Observable
+
+      if isObservable
+        return unless hashCode = elem.____hashCodes
+
+        return unless hashCode of @events
+
+        elemData = @events[hashCode]
+
+        events      = elemData.events
+        eventHandle = elemData.handle
+
+        return eventHandle(event)
+
       return unless elem and typeof elem.nodeType is "number"
 
       return if elem.nodeType is 3 or elem.nodeType is 8 or not elem.parentNode
 
       # dispatch for IE
       if document.createEventObject
-        elem.fireEvent("on" + event, document.createEventObject())
+        return elem.fireEvent("on" + event, document.createEventObject())
       else
         # dispatch for firefox + others
         htmlEvent = document.createEvent("HTMLEvents")
@@ -130,18 +137,27 @@ package "cafe"
         htmlEvent.initEvent(event, yes, yes)
 
         # canceled or not
-        not elem.dispatchEvent(htmlEvent)
+        return not elem.dispatchEvent(htmlEvent)
 
     @handle: (hashCode, event) ->
       return unless hashCode of @events
 
-      event = @fix(event or window.event)
+      elem = @events[hashCode].currentTarget
 
-      event.currentTarget = @events[hashCode].currentTarget
+      isObservable = elem instanceof cafe.event.Observable if cafe.event?.Observable
+
+      if isObservable
+        event = new Event(event)
+      else
+        event = @fix(event or window.event)
+
+      event.currentTarget = elem
 
       typeKey = event.type
 
       typeKey = typeKey.toLowerCase() unless typeKey.indexOf("DOM") is 0
+
+      propagationStopped = no
 
       if typeKey of @events[hashCode].events
         # Clone the handlers to prevent manipulation
@@ -150,31 +166,38 @@ package "cafe"
             handler.call(null, event)
           catch ex
             setTimeout(
-              => throw ex
+              -> throw ex
               10
             )
 
-          break if event.isImmediatePropagationStopped()
+          break if propagationStopped = event.isPropagationStopped()
 
-      return
+      return propagationStopped if isObservable
 
     @add: (elem, types, handler) ->
-      # For whatever reason, IE has trouble passing the window object
-      # around, causing it to be cloned in the process
-      isWindow = yes if elem is window or elem and typeof elem is "object" and "setInterval" of elem and elem isnt window and not elem.frameElement
+      isObservable = elem instanceof cafe.event.Observable if cafe.event?.Observable
 
-      if isWindow
-        elem = window
-
-        hashCode = 0
-      else
-        return unless elem and typeof elem.nodeType is "number"
-
-        return if elem.nodeType is 3 or elem.nodeType is 8
-
+      if isObservable
         elem.____hashCodes = ++@hashCodes unless elem.____hashCodes
 
         hashCode = elem.____hashCodes
+      else
+        # For whatever reason, IE has trouble passing the window object
+        # around, causing it to be cloned in the process
+        isWindow = yes if elem is window or elem and typeof elem is "object" and "setInterval" of elem and elem isnt window and not elem.frameElement
+
+        if isWindow
+          elem = window
+
+          hashCode = 0
+        else
+          return unless elem and typeof elem.nodeType is "number"
+
+          return if elem.nodeType is 3 or elem.nodeType is 8
+
+          elem.____hashCodes = ++@hashCodes unless elem.____hashCodes
+
+          hashCode = elem.____hashCodes
 
       unless hashCode of @events
         @events[hashCode] = {
@@ -194,7 +217,7 @@ package "cafe"
         type = type.toLowerCase() unless type.indexOf("DOM") is 0
 
         # Init the event handler queue
-        unless type of events
+        unless type of events and not isObservable
           events[type] = []
 
           # Bind the global event handler to the element
@@ -211,18 +234,23 @@ package "cafe"
       elem = null
 
     @remove: (elem, types, handler) ->
-      isWindow = yes if elem is window or elem and typeof elem is "object" and "setInterval" of elem and elem isnt window and not elem.frameElement
+      isObservable = elem instanceof cafe.event.Observable if cafe.event?.Observable
 
-      if isWindow
-        elem = window
-
-        hashCode = 0
-      else
-        return unless elem and typeof elem.nodeType is "number"
-
-        return if elem.nodeType is 3 or elem.nodeType is 8
-
+      if isObservable
         return unless hashCode = elem.____hashCodes
+      else
+        isWindow = yes if elem is window or elem and typeof elem is "object" and "setInterval" of elem and elem isnt window and not elem.frameElement
+
+        if isWindow
+          elem = window
+
+          hashCode = 0
+        else
+          return unless elem and typeof elem.nodeType is "number"
+
+          return if elem.nodeType is 3 or elem.nodeType is 8
+
+          return unless hashCode = elem.____hashCodes
 
       return unless hashCode of @events
 
@@ -251,7 +279,7 @@ package "cafe"
             eventHandlers.push(handleFunc) unless handler is handleFunc
 
         # remove generic event handler if no more handlers exist
-        if eventHandlers.length is 0
+        if eventHandlers.length is 0 and not isObservable
           if elem.removeEventListener
             elem.removeEventListener(type, eventHandle, no)
           else if elem.detachEvent
