@@ -1212,8 +1212,9 @@ ContentAssist.prototype = {
 
             this.current_proposal = null;
 
-            if (this.last_proposals.length) {
+            if (this.last_proposals.length === 0) {
               this.popup.style.display = 'none';
+              this.stopFetchingCompletionProposals();
               return;
             }
 
