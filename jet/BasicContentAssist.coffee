@@ -274,8 +274,8 @@ class TextViewer extends Observable
             if val.length isnt last_length or val isnt last_value
               @notifyListeners('modify')
 
-              last_length = val.length
-              last_value  = val
+            last_length = val.length
+            last_value  = val
           finally
             @modifiedEventPrevented = no
         10
@@ -285,6 +285,8 @@ class TextViewer extends Observable
     Event.add(window, 'focus resize', (evt) => @updateMeasurerSize() )
 
   reset: () ->
+    @modifiedEventPrevented = no
+
     @textarea.value = ""
 
     Event.dispatch(@textarea, "change")
@@ -857,7 +859,9 @@ class CompletionProposal
     if node = @generator(word, @toString(), @str.valueOf())
       proposal.appendChild(if typeof node is "string" then document.createTextNode(node) else node)
 
-    return proposal
+      return proposal
+
+    return null
 
 `
 /**
@@ -1183,6 +1187,9 @@ ContentAssist.prototype = {
 
             for (var i = 0, il = proposals.length; i < il; i++) {
               var proposal_elem = proposals[i].toHtml();
+
+              if (proposal_elem === null) { continue; }
+
               this.popup_content.appendChild(proposal_elem);
               last_offset = proposals[i].offset;
 
