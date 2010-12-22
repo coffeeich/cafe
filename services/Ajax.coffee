@@ -460,6 +460,9 @@ package "cafe.services"
     #Evalulates a script in a global context
     globalEval: (data) ->
       if data and /\S/.test(data)
+        new Function("", "(function() {#{data}})()").call(null)
+        ###
+
         # Inspired by code by Andrea Giammarchi
         # http://webreflection.blogspot.com/2007/08/global-scope-evaluation-and-dom.html
         head = document.getElementsByTagName("head")[0] or document.documentElement
@@ -475,6 +478,7 @@ package "cafe.services"
         # This arises when a base node is used (#2709).`
         head.insertBefore(script, head.firstChild)
         head.removeChild(script)
+        ###
 
     httpSuccess: (xhr) ->
       try
