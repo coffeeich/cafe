@@ -1189,21 +1189,25 @@ ContentAssist.prototype = {
 
             this.current_proposal = null;
 
+            this.last_proposals = [];
+
             for (var i = 0, il = proposals.length; i < il; i++) {
               this.current_proposal = proposals[i];
 
-              var proposal_elem = proposals[i].toHtml();
+              var proposal_elem = this.current_proposal.toHtml();
 
               if (proposal_elem === null) { continue; }
 
               this.popup_content.appendChild(proposal_elem);
-              last_offset = proposals[i].offset;
+              last_offset = this.current_proposal.offset;
 
               if (this.options.visible_items > 0 && i < this.options.visible_items) {
                 popup_height += proposal_elem.offsetHeight;
               }
 
               total_height += proposal_elem.offsetHeight;
+
+              this.last_proposals.push(this.current_proposal);
             }
 
             this.current_proposal = null;
@@ -1216,7 +1220,6 @@ ContentAssist.prototype = {
             var coords = this.viewer.getAbsoluteCharacterCoords(last_offset);
             this.showPopup(coords.x, coords.y);
             this.popup_content.style.height = popup_height ? popup_height + 'px' : 'auto';
-            this.last_proposals = proposals;
 
             this.selected_proposal = 0;
             this.selectProposal(this.selected_proposal);
