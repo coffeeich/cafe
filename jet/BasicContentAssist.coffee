@@ -811,6 +811,7 @@ class CompletionProposal
   cursor: null
   info: null
   generator: null
+  current_proposal: null
 
   # @param {String} str The actual string to be inserted into the document
   # @param {Number} offset The offset of the text to be replaced
@@ -1186,6 +1187,8 @@ ContentAssist.prototype = {
             Utils.emptyElement(this.popup_content);
 
             for (var i = 0, il = proposals.length; i < il; i++) {
+              this.current_proposal = proposals[i];
+
               var proposal_elem = proposals[i].toHtml();
 
               if (proposal_elem === null) { continue; }
@@ -1317,6 +1320,9 @@ package "cafe.jet"
 
       @content_assist.onApplyProposal = () =>
         @notifyListeners("select")
+
+    getCurrentProposal: () ->
+      return @content_assist.current_proposal or null
 
     getSelectedProposal: () ->
       ix = @content_assist.selected_proposal
