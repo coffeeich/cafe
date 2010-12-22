@@ -285,11 +285,9 @@ class TextViewer extends Observable
     Event.add(window, 'focus resize', (evt) => @updateMeasurerSize() )
 
   reset: () ->
-    changed = yes unless @textarea.value is ""
-
     @textarea.value = ""
 
-    Event.dispatch(@textarea, "change") if changed
+    Event.dispatch(@textarea, "change")
 
 TextViewer.prototype[name] = method for name, method of `{
   /**
