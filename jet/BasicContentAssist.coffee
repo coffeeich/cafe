@@ -248,6 +248,8 @@ class TextViewer extends Observable
 
   # @param Element textarea
   constructor: (@textarea) ->
+    @textarea.setAttribute("autocomplete", "off")
+
     @_measurer = @createMeasurer(@textarea)
 
     @updateMeasurerSize()
