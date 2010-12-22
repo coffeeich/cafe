@@ -820,9 +820,7 @@ class CompletionProposal
 
       return fragment
 
-  # Returns the string to be displayed in the list of completion proposals.
-  # @return String
-  getDisplayString: () -> @toString()
+  getSource: () -> @str
 
   # Returns proposal's additional info which will be shown when proposal
   # is selected
@@ -846,12 +844,10 @@ class CompletionProposal
   toHtml: () ->
     word = @word
 
-    displayString = @getDisplayString()
-
     proposal = document.createElement('div')
     proposal.className = 'cafe-jet-content-assist-proposal'
 
-    if node = @generator(word, displayString, @str.valueOf())
+    if node = @generator(word, @toString(), @str.valueOf())
       proposal.appendChild(if typeof node is "string" then document.createTextNode(node) else node)
 
     return proposal
