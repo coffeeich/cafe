@@ -811,7 +811,6 @@ class CompletionProposal
   cursor: null
   info: null
   generator: null
-  current_proposal: null
 
   # @param {String} str The actual string to be inserted into the document
   # @param {Number} offset The offset of the text to be replaced
@@ -1027,6 +1026,8 @@ var ContentAssist = function(viewer, processor, options) {
 };
 
 ContentAssist.prototype = {
+  current_proposal: null,
+
   /**
    * @param {ContentAssistProcessor} processor
    */
@@ -1186,6 +1187,8 @@ ContentAssist.prototype = {
             this.popup.style.display = 'block';
             Utils.emptyElement(this.popup_content);
 
+            this.current_proposal = null;
+
             for (var i = 0, il = proposals.length; i < il; i++) {
               this.current_proposal = proposals[i];
 
@@ -1202,6 +1205,8 @@ ContentAssist.prototype = {
 
               total_height += proposal_elem.offsetHeight;
             }
+
+            this.current_proposal = null;
 
             if (total_height > popup_height)
               Utils.addClass(this.popup, 'cafe-jet-content-assist-popup-overflow');
