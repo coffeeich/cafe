@@ -261,13 +261,13 @@ class TextViewer extends Observable
 
     # watch for content modification
     # if we think it was modified, we'll send special "modify" event
-    Event.add(textarea, 'paste change keyup', (evt) =>
+    Event.add(@textarea, 'paste change keyup', (evt) =>
       setTimeout(
         =>
           try
             return if @modifiedEventPrevented
 
-            val = textarea.value
+            val = @textarea.value
 
             if val.length isnt last_length or val isnt last_value
               @notifyListeners('modify')
@@ -275,12 +275,19 @@ class TextViewer extends Observable
               last_length = val.length
               last_value  = val
           finally
-            @modifiedEventPrevented = false
+            @modifiedEventPrevented = no
         10
       )
     )
 
     Event.add(window, 'focus resize', (evt) => @updateMeasurerSize() )
+
+  reset: () ->
+    changed = yes unless @textarea.value is ""
+
+    @textarea.value = ""
+
+    Event.dispatch(@textarea, "change") if changed
 
 TextViewer.prototype[name] = method for name, method of `{
   /**
