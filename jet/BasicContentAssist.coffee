@@ -1212,6 +1212,11 @@ ContentAssist.prototype = {
 
             this.current_proposal = null;
 
+            if (this.last_proposals.length) {
+              this.popup.style.display = 'none';
+              return;
+            }
+
             if (total_height > popup_height)
               Utils.addClass(this.popup, 'cafe-jet-content-assist-popup-overflow');
             else
