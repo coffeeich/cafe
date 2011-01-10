@@ -63,14 +63,7 @@ exports.Import = class Import
 
     return "`var #{className} = __imported['#{path}']`" if location of @imported
 
-    content = locator.readFile()
-
-    try
-      @coffee.compile(content)
-    catch ex
-      ex.message += " in #{location}.coffee"
-
-      throw ex
+    content = locator.readFile(@coffee)
 
     content = content.split(/\n/)
 

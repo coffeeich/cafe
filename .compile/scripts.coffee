@@ -7,6 +7,20 @@ exports.CoffeeLocator = class CoffeeLocator extends FilesLocator
 
   errorPrefix: "Error while import class"
 
+  readFile: (compiler) ->
+    content = super()
+
+    return content unless typeof compiler?.compile is "function"
+
+    try
+      compiler.compile(content)
+    catch ex
+      ex.message += " in #{@location}.coffee"
+
+      throw ex
+
+    return content
+
   getFilesList: (onlyNames) ->
     list = super()
 
