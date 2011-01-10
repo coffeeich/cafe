@@ -1,6 +1,6 @@
-fileSystem   = require("fs")
-pathLib      = require("path")
-childProcess = require("child_process")
+fileSystem   = require "fs"
+pathLib      = require "path"
+childProcess = require "child_process"
 
 exports.Compiler = class Compiler
 
@@ -8,7 +8,7 @@ exports.Compiler = class Compiler
   cafeLibPath : null
   options     : null
   printer     : null
-  allow       : true
+  allow       : yes
   filePath    : ""
   configPath  : ""
 
@@ -18,17 +18,17 @@ exports.Compiler = class Compiler
     @filePath = fileSystem.realpathSync(filePath) if filePath = @options.arguments.join(" ").trim()
 
     if @options.project
-      dir  = pathLib.dirname(@filePath);
-      name = pathLib.basename(@filePath, ".coffee");
+      dir  = pathLib.dirname(@filePath)
+      name = pathLib.basename(@filePath, ".coffee")
 
-      configPath = dir + "/" + name + ".config.yml";
-      exists = false;
+      configPath = "#{dir}/#{name}.config.yml"
+      exists = no
 
       try
         fileSystem.statSync(configPath)
-        exists = true
+        exists = yes
       catch ex
-        exists = false
+        exists = no
 
       @allow = exists
 
@@ -46,17 +46,17 @@ exports.Compiler = class Compiler
       return "  #{short}, #{full}\t#{description}"
 
     @printer.print(
-      '''
+      """
 
       Usage: cafe [options] path/to/script.coffee
 
       Available options:
 
-      ''' + options.join("\n") + '''
+      #{options.join("\n")}
 
 
 
-      '''
+      """
     )
 
   showVersion: () ->
@@ -80,7 +80,7 @@ exports.Compiler = class Compiler
 
         return
 
-      @printer.print("/* CoffeeScript version " + @coffee.VERSION + " */\n")
+      @printer.print("/* CoffeeScript version #{@coffee.VERSION} */\n")
 
       if err
         @printer.print("#{err.name}: #{err.message}\n" )
@@ -92,7 +92,7 @@ exports.Compiler = class Compiler
 
         return
 
-      cacheFile = "/tmp/" + "___coffee_tmp_file_" + (new Date().getTime()) + "_" + pathLib.basename(coffeeFile.replace(/\.coffee$/, ".js"))
+      cacheFile = "/tmp/___coffee_tmp_file_#{ new Date().getTime() }_#{ pathLib.basename(coffeeFile.replace(/\.coffee$/, ".js")) }"
 
       fileSystem.writeFileSync(cacheFile, code)
 
@@ -148,7 +148,7 @@ exports.Compiler = class Compiler
     @printer.print("compile #{coffeeFile} to #{jsFile}... " ) if @printer
 
     if @options.closure
-      cacheFile = "/tmp/" + "___coffee_tmp_file_" + (new Date().getTime()) + "_" + pathLib.basename(jsFile)
+      cacheFile = "/tmp/___coffee_tmp_file_#{ new Date().getTime() }_#{ pathLib.basename(jsFile) }"
 
       fileSystem.writeFileSync(cacheFile, code)
 

@@ -42,8 +42,6 @@ exports.Parser = class Parser
 
     return code
 
-  @stylesheets: null
-
   @extras:
     "package(\\s+|\\()":
       match  : 1
@@ -65,11 +63,13 @@ exports.Parser = class Parser
       match  : [1 ,3]
       workout:
         3 : (parser, path) ->
-          Parser.stylesheets or = require("./stylesheets")
-
           rootDir = if path.indexOf("cafe/") is 0 then parser.cafeLibPath else parser.fileDir
 
-          Parser.stylesheets.StyleSheet.fetchAsString(rootDir, path, '"')
+          { CSSLocator } = require("./stylesheets")
+
+          locator = new CSSLocator(rootDir, path)
+
+          return locator.readFile('"')
 
       method : "__stylesheet"
       script : "extenders/stylesheet.coffee"
