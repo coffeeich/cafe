@@ -12,6 +12,9 @@ exports.Import = class Import
 
   stack: null
 
+  insertIndex: null
+  insertShift: ""
+
   constructor: (@fileDir, @cafeLibPath, @coffee) ->
     @stack = []
     @imported = {}
@@ -20,16 +23,28 @@ exports.Import = class Import
     code = @doImport(code)
 
     if @stack.length isnt 0
-      return '__imported = {}\n' + @stack.join("\n") + "\n" + code
+      @stack[0 ... 0] = [@insertShift + '__imported = {}']
+
+      code = code.split(/\n/)
+
+      i = @insertIndex or 0
+
+      code[i ... i] = @stack
+
+      return code.join("\n")
 
     return code
 
   doImport: (code) ->
-    return code.split(/\n/).map((code) =>
+    return code.split(/\n/).map((code, row) =>
       return code.replace(
         @regexp
         (a, before, c, path) =>
           return "" if before.trim().charAt(0) is '#'
+
+          if @insertIndex is null
+            @insertIndex = row
+            @insertShift = (" " for i in before).join("")
 
           cwd = if path.indexOf("cafe/") is 0 then @cafeLibPath else @fileDir
 
@@ -59,7 +74,7 @@ exports.Import = class Import
           if packageCollection
             pack = "__imported['#{packageCollection}']"
 
-            @stack.push("#{pack} = #{content.join(', ')}\n")
+            @stack.push("#{@insertShift}#{pack} = #{content.join(', ')}\n")
 
             content = pack
           else
@@ -75,6 +90,8 @@ exports.Import = class Import
 
     { location } = locator
 
+    shift = @insertShift
+
     unless location of @imported
       content = locator.readFile(@coffee).split(/\n/)
 
@@ -83,13 +100,13 @@ exports.Import = class Import
       content = content.map (content) ->
         return "" unless content
 
-        return "  #{content}"
+        return "#{shift}  #{content}"
 
       content = content.join("\n")
 
       content = @doImport(content) if @regexp.test(content)
 
-      @stack.push("""__imported['#{path}'] = (->
+      @stack.push("""#{shift}__imported['#{path}'] = (->
         #{content} )()
         """)
 
