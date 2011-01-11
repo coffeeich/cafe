@@ -10,14 +10,17 @@ exports.Import = class Import
   imported: null
   coffee  : null
 
+  stack: null
+
   constructor: (@fileDir, @cafeLibPath, @coffee) ->
+    @stack = []
     @imported = {}
 
   parse: (code) ->
     code = @doImport(code)
 
-    for some of @imported
-      return '__imported = {}\n' + code
+    if @stack.length isnt 0
+      return '__imported = {}\n' + @stack.join("\n") + "\n" + code
 
     return code
 
@@ -28,15 +31,17 @@ exports.Import = class Import
         (a, before, c, path) =>
           return "" if before.trim().charAt(0) is '#'
 
-          shift = (" " for i in before).join("")
-
           cwd = if path.indexOf("cafe/") is 0 then @cafeLibPath else @fileDir
 
           content = []
 
           list = {}
 
+          packageCollection = null
+
           if path.slice(-1) is "*"
+            packageCollection = path
+
             path = path.split("/").slice(0, -1).join("/")
 
             locator = new CoffeeLocator(cwd, path, yes)
@@ -47,40 +52,47 @@ exports.Import = class Import
             list[path.split('/').pop()] = path
 
           for className, path of list
-            content.push(
-              @fetchContent(cwd, path, shift, className)
-            )
+            data = @fetchContent(cwd, path, className)
 
-          return before + content.join("\n" + shift)
+            content.push(if packageCollection then "#{className}: __imported['#{path}']" else data)
+
+          if packageCollection
+            pack = "__imported['#{packageCollection}']"
+
+            @stack.push("#{pack} = #{content.join(', ')}\n")
+
+            content = pack
+          else
+            content = content.join("\n")
+
+          return before + content
       )
 
     ).join("\n")
 
-  fetchContent: (cwd, path, shift, className) ->
+  fetchContent: (cwd, path, className) ->
     locator = new CoffeeLocator(cwd, path)
 
-    location = locator.location
+    { location } = locator
 
-    return "`var #{className} = __imported['#{path}']`" if location of @imported
+    unless location of @imported
+      content = locator.readFile(@coffee).split(/\n/)
 
-    content = locator.readFile(@coffee)
+      content.push("return #{className}")
 
-    content = content.split(/\n/)
+      content = content.map (content) ->
+        return "" unless content
 
-    content.push("__imported['#{path}'] = #{className}")
+        return "  #{content}"
 
-    content = content.map (content) ->
-      return "" unless content
+      content = content.join("\n")
 
-      return "#{shift}  #{content}"
+      content = @doImport(content) if @regexp.test(content)
 
-    content = """(->
-      #{content.join("\n")} )()
-      #{shift}`var #{className} = __imported['#{path}']`
-      """
+      @stack.push("""__imported['#{path}'] = (->
+        #{content} )()
+        """)
 
-    @imported[location] = true
+      @imported[location] = true
 
-    content = @doImport(content) if @regexp.test(content)
-
-    return content
+    return "`var #{className} = __imported['#{path}']`"

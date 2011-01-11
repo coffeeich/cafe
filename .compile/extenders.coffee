@@ -7,7 +7,12 @@ exports.Parser = class Parser
   cafeLibPath: null
   coffee : null
 
+  cupsStack: null
+  cupsHash: null
+
   constructor: (@fileDir, @cafeLibPath, @coffee) ->
+    @cupsStack = []
+    @cupsHash  = {}
 
   parse: (code) ->
     included = {}
@@ -40,6 +45,9 @@ exports.Parser = class Parser
 
         code = [ script, code ].join("\n")
 
+    if @cupsStack.length isnt 0
+      return '__cups = {}\n' + @cupsStack.join("\n") + "\n" + code
+
     return code
 
   @extras:
@@ -59,8 +67,37 @@ exports.Parser = class Parser
     "\\.([\\s\\n\\t])*indexOf\\(":
       script : "extenders/prototype/Array/indexOf.coffee"
 
+    "~cup(\\s+|\\()\\s*(!)*\\s*(\"|')(.+?)('|\")":
+      match  : [1, 2 ,4]
+      workout:
+        2 : (parser, flag) ->
+          return "yes, " if flag?
+
+          return "no, "
+
+        4 : (parser, path) ->
+          rootDir = if path.indexOf("cafe/") is 0 then parser.cafeLibPath else parser.fileDir
+
+          { CupLocator } = require("./cups")
+
+          locator = new CupLocator(rootDir, path)
+
+          { location } = locator
+
+          unless location of parser.cupsHash
+            coffeekup = require(coffeeDir + "/coffeekup")
+
+            parser.cupsStack.push("`__cups['#{path}'] = #{coffeekup.compile(locator.readFile())}`".replace(/function\s*anonymous/g, "function"))
+
+            parser.cupsHash[location] = yes
+
+          return "__cups['#{path}']"
+
+      method : "__htmlCup"
+      script : "extenders/htmlCup.coffee"
+
     "~stylesheet(\\s+|\\()(\"|')(.+?)('|\")":
-      match  : [1 ,3]
+      match  : [1, 3]
       workout:
         3 : (parser, path) ->
           rootDir = if path.indexOf("cafe/") is 0 then parser.cafeLibPath else parser.fileDir
