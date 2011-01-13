@@ -198,7 +198,7 @@ package "cafe"
     @processing: () ->
       deferred = Deferred.succeed()
 
-      processes = if arguments.length is 1 && arguments[0] instanceof Array then arguments[0].slice() else Array.prototype.slice.call(arguments)
+      processes = if arguments.length is 1 and arguments[0] instanceof Array then arguments[0].slice() else Array.prototype.slice.call(arguments)
 
       deferred.addCallback(getProcessCallback(process)) for process in processes
 

@@ -74,7 +74,7 @@ exports.Import = class Import
           if packageCollection
             pack = "__imported['#{packageCollection}']"
 
-            @stack.push("#{@insertShift}#{pack} = #{content.join(', ')}\n")
+            @stack.push("#{@insertShift}#{pack} = #{if content.length then content.join(', ') else '{}'}\n")
 
             content = pack
           else
