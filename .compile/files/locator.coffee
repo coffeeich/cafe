@@ -73,6 +73,9 @@ exports.FilesLocator = class FilesLocator
 
           cwd = fileDir
 
+          return @location = path if path
+
+    if path
       return @location = path if isDir
 
       return @location = path + "." + @extension
