@@ -105,6 +105,9 @@ exports.Compiler = class Compiler
 
         fileSystem.unlinkSync(cacheFile) if stat.isFile()
 
+        if stdError
+          fileSystem.writeFileSync(jsFile, code)
+
         if @printer
           if error isnt null
             @printer.print("\nexec error: #{error}\n")
@@ -161,6 +164,9 @@ exports.Compiler = class Compiler
         stat = fileSystem.statSync(cacheFile)
 
         fileSystem.unlinkSync(cacheFile) if stat.isFile()
+
+        if stdError
+          fileSystem.writeFileSync(jsFile, code)
 
         if @printer
           if error isnt null
