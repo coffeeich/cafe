@@ -37,6 +37,120 @@ exports.Compiler = class Compiler
   setPrinter: (printer) ->
     @printer = printer if typeof printer.print is "function"
 
+  run: () ->
+    return @showVersion() if @options.version
+    return @printHelp()   if @options.help
+
+    return unless @allow
+    return unless @filePath
+
+    pathLib.exists(@filePath, (exists) =>
+      return unless exists
+
+      try
+        @processCompile( fileSystem.readFileSync(@filePath) )
+      catch ex
+        @processException(ex)
+    )
+
+  getCSPath: () ->
+    return @filePath
+
+  getJSPath: () ->
+    return pathLib.dirname(@filePath) + "/" + pathLib.basename(@filePath, "coffee") + "js"
+
+  processCompile: (code) ->
+    code = @coffee.compile( @parse( code.toString() ) ).trim()
+
+    return @save(code) if @options.save
+
+    @printer.print("/* CoffeeScript version #{@coffee.VERSION} */\n")
+
+    unless @options.closure
+      @printer.print(code)
+
+      return
+
+    @zip(code, yes)
+
+  processException: (ex) ->
+    throw ex if ex if @options.save is yes
+
+    @printer.print("/* CoffeeScript version #{@coffee.VERSION} */\n")
+
+    if ex
+      @printer.print("#{ex.name}: #{ex.message}\n" )
+
+      return
+
+  parse: (code) ->
+
+    build = require("./build")
+
+    parser = new build.Import(require("path").dirname(@filePath), @cafeLibPath, @coffee)
+
+    parser.ignore([@filePath])
+
+    code = parser.parse(code)
+
+    extenders = require("./extenders")
+
+    parser = new extenders.Parser(require("path").dirname(@filePath), @cafeLibPath, @coffee)
+
+    code = parser.parse(code)
+
+    return code
+
+  save: (code) ->
+    coffeeFile = @getCSPath()
+    jsFile     = @getJSPath()
+
+    @printer.print("compile #{coffeeFile} to #{jsFile}... " ) if @printer
+
+    if @options.closure
+      @zip(code)
+    else
+      fileSystem.writeFileSync(jsFile, code)
+
+      @printer.print("ok\n" ) if @printer
+
+  zip: (code, onScreen=no) ->
+    jsFile = @getJSPath()
+
+    cacheFile = "/tmp/___coffee_tmp_file_#{ new Date().getTime() }_cached_#{ pathLib.basename(jsFile) }"
+    jsFile    = "/tmp/___coffee_tmp_file_#{ new Date().getTime() }_target_#{ pathLib.basename(jsFile) }" if onScreen
+
+    fileSystem.writeFileSync(cacheFile, code)
+
+    command = "java -jar #{__dirname}/../.closure-compiler/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --js #{cacheFile} --js_output_file #{jsFile}"
+
+    childProcess.exec(command, (error, stdOut, stdError) =>
+
+      @printer.print("\nstd Error: " + stdError + "\n")  if @printer and stdError
+
+      out = fileSystem.readFileSync(jsFile) if onScreen
+
+      files = []
+      files.push cacheFile
+      files.push jsFile if onScreen
+
+      for file in files
+        stat = fileSystem.statSync(file)
+  
+        fileSystem.unlinkSync(file) if stat.isFile()
+
+      if stdError and not onScreen
+        fileSystem.writeFileSync(jsFile, code)
+
+      if @printer
+        if error isnt null
+          @printer.print("\nexec error: #{error}\n")
+        else if onScreen
+          @printer.print( ":\n#{out}" )
+        else
+          @printer.print("ok\n" )
+    )
+
   printHelp: () ->
     return unless @printer
 
@@ -63,121 +177,6 @@ exports.Compiler = class Compiler
     return unless @printer
 
     @printer.print("Cafe version #{Compiler.version}\n")
-
-  run: (callback) ->
-    return @showVersion() if @options.version
-    return @printHelp()   if @options.help
-
-    return unless @allow
-    return unless @filePath
-
-    callback = (err, code, coffeeFile) =>
-      if @options.save is yes
-
-        throw err if err
-
-        @save(code, coffeeFile, coffeeFile.replace(/\.coffee$/, ".js"))
-
-        return
-
-      @printer.print("/* CoffeeScript version #{@coffee.VERSION} */\n")
-
-      if err
-        @printer.print("#{err.name}: #{err.message}\n" )
-
-        return
-
-      unless @options.closure
-        @printer.print(code)
-
-        return
-
-      cacheFile = "/tmp/___coffee_tmp_file_#{ new Date().getTime() }_#{ pathLib.basename(coffeeFile.replace(/\.coffee$/, ".js")) }"
-
-      fileSystem.writeFileSync(cacheFile, code)
-
-      command = "java -jar #{__dirname}/../.closure-compiler/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --js #{cacheFile}"
-
-      childProcess.exec(command, (error, stdOut, stdError) =>
-        @printer.print("\nstd Error: " + stdError + "\n")  if @printer and stdError
-
-        stat = fileSystem.statSync(cacheFile)
-
-        fileSystem.unlinkSync(cacheFile) if stat.isFile()
-
-        if stdError
-          fileSystem.writeFileSync(jsFile, code)
-
-        if @printer
-          if error isnt null
-            @printer.print("\nexec error: #{error}\n")
-          else
-            @printer.print( stdOut )
-
-      )
-
-    pathLib.exists(@filePath, (exists) =>
-      return unless exists
-
-      return if not @filePath
-
-      code = require("fs").readFileSync(@filePath)
-
-      try
-        code = @parse( code.toString())
-
-        callback(null, @coffee.compile(code).trim(), @filePath)
-      catch ex
-        callback(ex, null, @filePath)
-    )
-
-  parse: (code) ->
-
-    build = require("./build")
-
-    parser = new build.Import(require("path").dirname(@filePath), @cafeLibPath, @coffee)
-
-    code = parser.parse(code)
-
-    extenders = require("./extenders")
-
-    parser = new extenders.Parser(require("path").dirname(@filePath), @cafeLibPath, @coffee)
-
-    code = parser.parse(code)
-
-    return code
-
-  save: (code, coffeeFile, jsFile) ->
-    @printer.print("compile #{coffeeFile} to #{jsFile}... " ) if @printer
-
-    if @options.closure
-      cacheFile = "/tmp/___coffee_tmp_file_#{ new Date().getTime() }_#{ pathLib.basename(jsFile) }"
-
-      fileSystem.writeFileSync(cacheFile, code)
-
-      command = "java -jar #{__dirname}/../.closure-compiler/compiler.jar --compilation_level SIMPLE_OPTIMIZATIONS --js #{cacheFile} --js_output_file #{jsFile}"
-
-      childProcess.exec(command, (error, stdOut, stdError) =>
-
-        @printer.print("\nstd Error: " + stdError + "\n")  if @printer and stdError
-
-        stat = fileSystem.statSync(cacheFile)
-
-        fileSystem.unlinkSync(cacheFile) if stat.isFile()
-
-        if stdError
-          fileSystem.writeFileSync(jsFile, code)
-
-        if @printer
-          if error isnt null
-            @printer.print("\nexec error: #{error}\n")
-          else
-            @printer.print("ok\n" )
-      )
-    else
-      fileSystem.writeFileSync(jsFile, code)
-
-      @printer.print("ok\n" ) if @printer
 
   @version: "0.1.4"
 

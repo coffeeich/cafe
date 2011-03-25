@@ -330,6 +330,13 @@ TextViewer.prototype[name] = method for name, method of `{
    * Returns current selection range of textarea
    */
   getSelectionRange: function() {
+    if (! this.textarea.value) {
+      return {
+        start: 0,
+        end: 0
+      };
+    }
+
     if ('selectionStart' in this.textarea) { // W3C's DOM
       return {
         start: this.textarea.selectionStart,
@@ -780,7 +787,7 @@ ContentAssistProcessor.prototype = {
           var result2 = [];
           for (var i = 0, il = result.length; i < il; i++) {
             var word = result[i];
-            if (word.toString().length > prefix_len) {
+            if (word.toString().length > prefix_len || word.toString() === prefix) {
               result2.push(word);
             }
           }

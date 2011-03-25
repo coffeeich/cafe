@@ -397,6 +397,7 @@ package "cafe.services"
       if params instanceof Array
         @setParameters(param) for param in params
       else
+        @params += unless @params then "" else "&"
         @params += if typeof params is "string" then params else HashMap.toQueryString(params)
 
     setDataType: (dataType) ->

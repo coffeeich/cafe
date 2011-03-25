@@ -5,12 +5,19 @@ package "cafe.jet"
 
   AjaxAssist: class AjaxAssist extends BasicContentAssist
 
+    rpc   : null
+    method: null
+
     key: "word"
     proposalRecognizer: null
 
     constructor: (textField, api, method="") ->
+      @setApi(api) if arguments.length > 1
+      @setMethod(method) if arguments.length > 2
+
       super(textField, (object) =>
-        rpc = new RPC(api)
+        rpc    = @rpc
+        method = @method
 
         object.onCancel -> rpc.abort()
 
@@ -31,6 +38,12 @@ package "cafe.jet"
             return data
         )
       )
+
+    setApi: (api) ->
+      @rpc = new RPC(api)
+
+    setMethod: (method) ->
+      @method = method
 
     setKey: (@key) ->
 
