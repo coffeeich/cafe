@@ -258,31 +258,33 @@ class TextViewer extends Observable
 
     @modifiedEventPrevented = false
 
-    last_length = -1
-    last_value  = null;
+    @last_length = -1
+    @last_value  = null;
 
     # watch for content modification
     # if we think it was modified, we'll send special "modify" event
     Event.add(@textarea, 'paste change keyup', (evt) =>
       setTimeout(
-        =>
-          try
-            return if @modifiedEventPrevented
-
-            val = @textarea.value
-
-            if val.length isnt last_length or val isnt last_value
-              @notifyListeners('modify')
-
-            last_length = val.length
-            last_value  = val
-          finally
-            @modifiedEventPrevented = no
+        => @proccessModifyEvent()
         10
       )
     )
 
     Event.add(window, 'focus resize', (evt) => @updateMeasurerSize() )
+
+  proccessModifyEvent: () ->
+    try
+      return if @modifiedEventPrevented
+
+      val = @textarea.value
+
+      if val.length isnt @last_length or val isnt @last_value
+        @notifyListeners('modify')
+
+      @last_length = val.length
+      @last_value  = val
+    finally
+      @modifiedEventPrevented = no
 
   reset: () ->
     @modifiedEventPrevented = no
@@ -1330,25 +1332,25 @@ package "cafe.jet"
   # @link http://chikuyonok.ru
   BasicContentAssist: class BasicContentAssist extends Observable
 
-    viewer        : null
-    processor     : null
-    content_assist: null
+    viewer    : null
+    processor : null
+    assist    : null
 
     constructor: (textarea, words, options) ->
       @viewer         = new TextViewer(textarea)
       @processor      = new ContentAssistProcessor(words)
-      @content_assist = new ContentAssist(@viewer, @processor, options)
+      @assist = new ContentAssist(@viewer, @processor, options)
 
-      @content_assist.onApplyProposal = () =>
+      @assist.onApplyProposal = () =>
         @notifyListeners("select")
 
     getCurrentProposal: () ->
-      return @content_assist.current_proposal or null
+      return @assist.current_proposal or null
 
     getSelectedProposal: () ->
-      ix = @content_assist.selected_proposal
+      ix = @assist.selected_proposal
 
-      return @content_assist.last_proposals[ix] if @content_assist.popup_content.childNodes[ix]
+      return @assist.last_proposals[ix] if @assist.popup_content.childNodes[ix]
 
       return null
 

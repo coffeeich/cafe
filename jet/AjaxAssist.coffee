@@ -1,5 +1,7 @@
-@import "cafe/jet/BasicContentAssist"
+@import "cafe/Event"
+@import "cafe/Deferred"
 @import "cafe/services/RPC"
+@import "cafe/jet/BasicContentAssist"
 
 package "cafe.jet"
 
@@ -11,9 +13,28 @@ package "cafe.jet"
     key: "word"
     proposalRecognizer: null
 
+    timer: 0
+    speed: 300
+
     constructor: (textField, api, method="") ->
       @setApi(api) if arguments.length > 1
       @setMethod(method) if arguments.length > 2
+
+      tId = null
+      send = no
+
+      Event.add(textField, 'paste change keyup', (evt) =>
+        clearTimeout(tId) and tId = null unless tId is null
+
+        if @viewer.textarea.value.trim()
+          @viewer.preventModifiedEvent()
+
+          tId = setTimeout(
+            =>
+              @viewer.proccessModifyEvent()
+            @speed
+          )
+      )
 
       super(textField, (object) =>
         rpc    = @rpc
@@ -24,7 +45,7 @@ package "cafe.jet"
         message = {}
         message[@key] = object.getWord()
 
-        return cafe.Deferred.processing(
+        return Deferred.processing(
           ->
             if rpc.type.toLowerCase() is "post"
               return rpc.call(method, null, message)
@@ -42,16 +63,17 @@ package "cafe.jet"
     setApi: (api) ->
       @rpc = new RPC(api)
 
-    setMethod: (method) ->
-      @method = method
+    setMethod: (@method) ->
 
     setKey: (@key) ->
 
+    setSpeed: (@speed) ->
+
     setProposalRecognizer: (recognizer) ->
-      @proposalRecognizer = recognizer if recognizer in [ObjectRecognizer]
+      @proposalRecognizer = recognizer if recognizer in [ ObjectRecognizer ]
 
     setVisibleItemsCount: (count) ->
-      @content_assist.setOptions(visible_items: count)
+      @assist.setOptions(visible_items: count)
 
     @ObjectRecognizer: class ObjectRecognizer extends String
 
