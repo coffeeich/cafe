@@ -1,6 +1,7 @@
 fileSystem   = require "fs"
 pathLib      = require "path"
 childProcess = require "child_process"
+yaml         = require "yaml"
 
 exports.Compiler = class Compiler
 
@@ -17,22 +18,21 @@ exports.Compiler = class Compiler
 
     @filePath = fileSystem.realpathSync(filePath) if filePath = @options.arguments.join(" ").trim()
 
-    if @options.project
-      dir  = pathLib.dirname(@filePath)
-      name = pathLib.basename(@filePath, ".coffee")
+    dir  = pathLib.dirname(@filePath)
+    name = pathLib.basename(@filePath, ".coffee")
 
-      configPath = "#{dir}/#{name}.config.yml"
+    configPath = "#{dir}/#{name}.config.yml"
+    exists = no
+
+    try
+      fileSystem.statSync(configPath)
+      exists = yes
+    catch ex
       exists = no
 
-      try
-        fileSystem.statSync(configPath)
-        exists = yes
-      catch ex
-        exists = no
+    @allow = exists if @options.project
 
-      @allow = exists
-
-      @configPath = configPath if exists
+    @configPath = configPath if exists
 
   setPrinter: (printer) ->
     @printer = printer if typeof printer.print is "function"
@@ -60,7 +60,19 @@ exports.Compiler = class Compiler
     return pathLib.dirname(@filePath) + "/" + pathLib.basename(@filePath, "coffee") + "js"
 
   processCompile: (code) ->
-    code = @coffee.compile( @parse( code.toString() ) ).trim()
+    #config = null
+
+    #if @configPath
+    #  fileContents = fileSystem.readFileSync(@configPath).toString()
+
+    #  try
+    #    config = yaml.eval(fileContents)
+    #  catch ex
+    #    @printer.print("/* #{ex.message} */\n")
+
+    code = code.toString()
+    #code = ("__CONFIG__=" + JSON.stringify(config) + "\n" + code) if config
+    code = @coffee.compile( @parse( code ) ).trim()
 
     return @save(code) if @options.save
 

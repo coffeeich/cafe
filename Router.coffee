@@ -51,8 +51,6 @@ package "cafe"
 
       section = Location.getSection() or defaultModule
 
-      matchModule = (module) -> (module + "Module").toLowerCase() is className.toLowerCase()
-
       wait = ( cafe.External.wait?() if cafe.External? ) or (f) -> f.call()
 
       wait ->
@@ -61,10 +59,12 @@ package "cafe"
 
       run = no
 
+      matchModule = (section, className) -> (section + "Module").toLowerCase() is className.toLowerCase()
+
       for className, Class of modules
-        unless run = matchModule(section)
+        unless run = matchModule(section, className)
           for module, aliases of @aliasesJSON
-            break if (section in aliases) and run = matchModule(module)
+            break if (section in aliases) and run = matchModule(module, className)
 
         if run
           Router.onDOMContentLoaded -> Router.runModule(className, Class, callbacks)
