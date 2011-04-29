@@ -30,3 +30,4 @@
 # Bugs?!
 
   Feature, bugs post on [issues](http://github.com/ich/cafe/issues)
+
