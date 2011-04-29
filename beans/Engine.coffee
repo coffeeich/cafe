@@ -10,6 +10,8 @@ package "cafe.beans"
 
     @addBeans: (json) ->
       for name, klass of json
+        klass::getSizzle = -> return Sizzle
+
         @classes[ @getBeanName(name) ] = klass
       return
 
@@ -23,11 +25,11 @@ package "cafe.beans"
             ((attr) ->
               return unless expr = item.getAttribute(attr)
 
-              item.removeAttribute(attr)
-
               [name] = expr.split(".")
 
               return unless Engine.getBean(name)
+
+              item.removeAttribute(attr)
 
               switch attr
                 when "ui:bind"
