@@ -2,14 +2,15 @@ fileSystem = require "fs"
 
 exports.FilesLocator = class FilesLocator
 
+  path: null
   extension: null
   location : null
   directory: no
 
   errorPrefix: "Impossible to determine location"
 
-  constructor: (cwd, path, @directory=no) ->
-    @findPath(cwd, path, @directory) if cwd and path
+  constructor: (cwd, @path, @directory=no) ->
+    @findPath(cwd, @path, @directory) if cwd and @path
 
   getFilesList: () ->
     throw new Error("Cannot read file list, location is file") if @directory isnt yes

@@ -598,11 +598,16 @@ class ContentAssistProcessor
 `
 ContentAssistProcessor.prototype = {
   charMode: "clearWords",
+  _collapseMatchedProposal: true,
 
   notAllowedChars: {
     clearWords : /[\s\*\.,:@\!\?\#%\^\$\(\)\{\}\[\]=\+<>'"«»\\\/]/,
     clearPhrase: /[\*\.,:@\!\?\#%\^\$\(\)\{\}\[\]=\+<>'"«»\\\/]/,
     allSymbols : null
+  },
+
+  collapseMatchedProposal: function(state) {
+   this._collapseMatchedProposal = state === false ? state : true;
   },
 
   /**
@@ -733,6 +738,8 @@ ContentAssistProcessor.prototype = {
     prefix = String(prefix);
 
     if (prefix && this.words) {
+      var collapseMatchedProposal = this._collapseMatchedProposal;
+
       return Deferred.processing(
         typeof this.words === "function" ?
           __bind(function() {
@@ -789,7 +796,16 @@ ContentAssistProcessor.prototype = {
           var result2 = [];
           for (var i = 0, il = result.length; i < il; i++) {
             var word = result[i];
-            if (word.toString().length > prefix_len || word.toString() === prefix) {
+
+            var len = word.toString().length;
+            var b = false;
+            if (collapseMatchedProposal) {
+              b = len >  prefix_len;
+            } else {
+              b = len >= prefix_len
+            }
+
+            if (b || word.toString() === prefix) {
               result2.push(word);
             }
           }
@@ -1183,6 +1199,11 @@ ContentAssist.prototype = {
 
         __bind(function(proposals) {
 
+          this.current_proposal = null;
+
+          this.last_proposals = [];
+          //console.log(proposals);
+
           if (! (id in this.fetchingCompletionProposals)) {
             return;
           }
@@ -1195,10 +1216,6 @@ ContentAssist.prototype = {
             // temporary show popup element for height calculations
             this.popup.style.display = 'block';
             Utils.emptyElement(this.popup_content);
-
-            this.current_proposal = null;
-
-            this.last_proposals = [];
 
             for (var i = 0, il = proposals.length; i < il; i++) {
               this.current_proposal = proposals[i];
@@ -1343,6 +1360,11 @@ package "cafe.jet"
 
       @assist.onApplyProposal = () =>
         @notifyListeners("select")
+
+    collapseMatchedProposal: (state=yes) ->
+      @processor.collapseMatchedProposal(state)
+
+    hasProposals: () -> @assist.last_proposals?.length > 0
 
     getCurrentProposal: () ->
       return @assist.current_proposal or null

@@ -12,6 +12,6 @@ package "cafe.event"
       Event.remove(this, event, callback)
       @
 
-    notifyListeners: (event) ->
-      Event.dispatch(this, event)
+    notifyListeners: (event, args) ->
+      Event.dispatch(this, event, args)
       @

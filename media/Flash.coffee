@@ -2,6 +2,8 @@ package "cafe.media"
 
   Flash: class Flash
 
+    checkAlt: null
+
     # jQuery Tools 1.2.5 / Flashembed - New wave Flash embedding
     #
     # NO COPYRIGHTS OR LICENSES. DO WHAT YOU LIKE.
@@ -23,10 +25,8 @@ package "cafe.media"
 
       return null unless sizzle = params.getSizzle?()
 
-      params =
-        wmode : "transparent"
-        allowscriptaccess : "never"
-        allowfullscreen : no
+      params = {}
+      fixes  = []
 
       for hidden in sizzle("[type='hidden']", node)
         {name, value} = hidden
@@ -40,22 +40,57 @@ package "cafe.media"
 
           flashvars[name] = value
         else if /^fix:/.test(name)
-          switch name.replace(/^fix:/, "")
-            when "wmode"
-              if value is yes
-                wmode = @fixWMode(params.wmode)
-                if wmode is null
-                  delete params.wmode
-                else
-                  params.wmode = wmode
+          fixes.push(name.replace(/^fix:/, ""))
         else
           params[name] = value
+
+      for name in fixes
+        switch name
+          when "wmode"
+            if value is yes
+              wmode = @fixWMode(params.wmode)
+              if wmode is null
+                delete params.wmode
+              else
+                params.wmode = wmode
+
+      if alternative = params.alternative
+        delete params.alternative
+
+        if @checkAlt
+          node.innerHTML = alternative
+
+          return null
 
       return @embed(node, params, flashvars) 
 
     fixWMode: (wmode) ->
       return null   if @constructor.isFirefox3MinorLess6()
       return wmode
+
+    checkAlternative: (check=yes) ->
+      @checkAlt = check
+
+    @getFlashVersion: () ->
+      # ie
+      try
+        try
+          # avoid fp6 minor version lookup issues
+          # see: http://blog.deconcept.com/2006/01/11/getvariable-setvariable-crash-internet-explorer-flash-6/
+          axo = new ActiveXObject('ShockwaveFlash.ShockwaveFlash.6')
+          try 
+            axo.AllowScriptAccess = 'always'
+          catch ex
+            return '6,0,0'
+
+        return new ActiveXObject('ShockwaveFlash.ShockwaveFlash').GetVariable('$version').replace(/\D+/g, ',').match(/^,?(.+),?$/)[1]
+      # other browsers
+      catch ex
+        try
+          if navigator.mimeTypes["application/x-shockwave-flash"].enabledPlugin
+            return (navigator.plugins["Shockwave Flash 2.0"] or navigator.plugins["Shockwave Flash"]).description.replace(/\D+/g, ",").match(/^,?(.+),?$/)[1]
+
+      return '0,0,0'
 
     @isFirefox3MinorLess6: () ->
       agent = navigator.userAgent.toLowerCase()

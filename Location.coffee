@@ -2,6 +2,7 @@ package "cafe"
 
   Location: class Location
 
+    location: null
     href    : null
     host    : null
     path    : null
@@ -12,8 +13,8 @@ package "cafe"
 
     changeHashListeners: null
 
-    constructor: () ->
-      location = document.location
+    constructor: (@location=document.location) ->
+      {location} = @
 
       @changeHashListeners = []
 

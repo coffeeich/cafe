@@ -12,6 +12,7 @@ package "cafe.jet"
 
     key: "word"
     proposalRecognizer: null
+    paramsProvider: null
 
     timer: 0
     speed: 300
@@ -42,8 +43,10 @@ package "cafe.jet"
 
         object.onCancel -> rpc.abort()
 
-        message = {}
+        message = @paramsProvider?() or {}
         message[@key] = object.getWord()
+
+        @notifyListeners("sendRequest")
 
         return Deferred.processing(
           ->
@@ -52,13 +55,16 @@ package "cafe.jet"
             else
               return rpc.call(method, message)
           (data) =>
-            return data unless @proposalRecognizer
+            if @proposalRecognizer
+              data = (new @proposalRecognizer(item) for item in data)
 
-            data = (new @proposalRecognizer(item) for item in data)
+            @notifyListeners("receiveResponse", data)
 
             return data
         )
       )
+
+    setParamsProvider: (@paramsProvider) ->
 
     setApi: (api) ->
       @rpc = new RPC(api)

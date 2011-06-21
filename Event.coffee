@@ -107,7 +107,7 @@ package "cafe"
     @events: {}
     @hashCodes: 0
 
-    @dispatch: (elem, event) ->
+    @dispatch: (elem, event, args) ->
       isObservable = elem instanceof cafe.event.Observable if cafe.event?.Observable
 
       if isObservable
@@ -120,7 +120,7 @@ package "cafe"
         events      = elemData.events
         eventHandle = elemData.handle
 
-        return eventHandle(event)
+        return eventHandle(event, args)
 
       return unless elem and typeof elem.nodeType is "number"
 
@@ -139,7 +139,7 @@ package "cafe"
         # canceled or not
         return not elem.dispatchEvent(htmlEvent)
 
-    @handle: (hashCode, event) ->
+    @handle: (hashCode, event, args) ->
       return unless hashCode of @events
 
       elem = @events[hashCode].currentTarget
@@ -163,7 +163,7 @@ package "cafe"
         # Clone the handlers to prevent manipulation
         for handler in @events[hashCode].events[typeKey].slice(0)
           try
-            handler.call(null, event)
+            handler.call(null, event, args)
           catch ex
             setTimeout(
               -> throw ex
@@ -205,7 +205,7 @@ package "cafe"
           # Add elem as a property of the handle obj
           # This is to prevent a memory leak with non-native events in IE.
           currentTarget: elem
-          handle: (event) -> Event.handle(hashCode, event)
+          handle: (event, args) -> Event.handle(hashCode, event, args)
         }
 
       elemData = @events[hashCode]
