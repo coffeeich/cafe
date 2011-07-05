@@ -25,18 +25,28 @@ package "cafe.beans"
             ((attr) ->
               return unless expr = item.getAttribute(attr)
 
-              [name] = expr.split(".")
+              liveAttrs = []
 
-              return unless Engine.getBean(name)
+              try
+                for ex in expr.split(/\s+/)
+                  [name] = ex.split(".")
 
-              item.removeAttribute(attr)
+                  unless Engine.getBean(name)
+                    liveAttrs.push(ex)
+                    continue
 
-              switch attr
-                when "ui:bind"
-                  Engine.callBind(expr, name, [item])
-                when "ui:action"
-                  item.onclick = () ->
-                    Engine.callAction(expr, name, Engine.getArguments(item, name))
+                  switch attr
+                    when "ui:bind"
+                      Engine.callBind(ex, name, [item])
+                    when "ui:action"
+                      item.onclick = () ->
+                        Engine.callAction(ex, name, Engine.getArguments(item, name))
+
+              finally
+                item.removeAttribute(attr)
+
+                item.setAttribute(attr, liveAttrs.join(" ")) if liveAttrs.length
+
               return
             )(attr)
           return
