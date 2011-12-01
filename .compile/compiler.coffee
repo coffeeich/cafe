@@ -22,15 +22,17 @@ exports.Compiler = class Compiler
     name = pathLib.basename(@filePath, ".coffee")
 
     configPath = "#{dir}/#{name}.config.yml"
-    exists = no
 
-    try
-      fileSystem.statSync(configPath)
-      exists = yes
-    catch ex
+    if @options.project
       exists = no
 
-    @allow = exists if @options.project
+      try
+        fileSystem.statSync(configPath)
+        exists = yes
+      catch ex
+        exists = no
+
+      @allow = exists
 
     @configPath = configPath if exists
 
@@ -97,19 +99,19 @@ exports.Compiler = class Compiler
 
   parse: (code) ->
 
-    build = require("./build")
+    {Import: BuildImport} = require("./build")
 
-    parser = new build.Import(require("path").dirname(@filePath), @cafeLibPath, @coffee)
+    importParser = new BuildImport(require("path").dirname(@filePath), @cafeLibPath, @coffee)
 
-    parser.ignore([@filePath])
+    importParser.ignore([@filePath])
 
-    code = parser.parse(code)
+    code = importParser.parse(code)
 
     extenders = require("./extenders")
 
-    parser = new extenders.Parser(require("path").dirname(@filePath), @cafeLibPath, @coffee)
+    extendersParser = new extenders.Parser(require("path").dirname(@filePath), @cafeLibPath, @coffee)
 
-    code = parser.parse(code)
+    code = extendersParser.parse(code)
 
     return code
 
@@ -138,7 +140,9 @@ exports.Compiler = class Compiler
 
     childProcess.exec(command, (error, stdOut, stdError) =>
 
-      @printer.print("\nstd Error: " + stdError + "\n")  if @printer and stdError
+      if @printer
+        @printer.print("\n/*")                             if onScreen
+        @printer.print("\nstd Error: " + stdError + "\n")  if stdError
 
       out = fileSystem.readFileSync(jsFile) if onScreen
 
@@ -146,19 +150,17 @@ exports.Compiler = class Compiler
       files.push cacheFile
       files.push jsFile if onScreen
 
-      for file in files
-        stat = fileSystem.statSync(file)
-  
-        fileSystem.unlinkSync(file) if stat.isFile()
+      fileSystem.unlinkSync(file)             if fileSystem.statSync(file).isFile() for file in files
 
-      if stdError and not onScreen
-        fileSystem.writeFileSync(jsFile, code)
+      fileSystem.writeFileSync(jsFile, code)  if error and not onScreen
+
+      @printer.print("*/\n") if @printer and onScreen
 
       if @printer
         if error isnt null
           @printer.print("\nexec error: #{error}\n")
         else if onScreen
-          @printer.print( ":\n#{out}" )
+          @printer.print( "\n#{out}" )
         else
           @printer.print("ok\n" )
     )
@@ -190,12 +192,13 @@ exports.Compiler = class Compiler
 
     @printer.print("Cafe version #{Compiler.version}\n")
 
-  @version: "0.1.4"
+  @version: "0.1.5"
 
   @options: [
     ["-s", "--save",    "Compile to JavaScript and save as .js files"]
     ["-p", "--project", "Compile only when yaml config exists"]
     ["-c", "--closure", "Compile with Google Closure Compiler"]
     ["-h", "--help",    "Display this help message"]
+    ["-e", "--cached",  "Compile using cache for imports (cache reset on import change)"]
     ["-v", "--version", "Display Cafe version"]
   ]
