@@ -15,6 +15,9 @@ package "cafe.beans"
         @classes[ @getBeanName(name) ] = klass
       return
 
+    @activate: () ->
+      @parse(document.body)
+
     @parse: (context) ->
       ui = ["ui:bind", "ui:action"]
       selector = ("[#{ui.join("],[")}]").replace(/:/g, "\\:")
