@@ -1,7 +1,7 @@
 fileSystem   = require "fs"
 pathLib      = require "path"
 childProcess = require "child_process"
-yaml         = require "yaml"
+#yaml         = require "yaml"
 
 exports.Compiler = class Compiler
 
@@ -192,7 +192,7 @@ exports.Compiler = class Compiler
 
     @printer.print("Cafe version #{Compiler.version}\n")
 
-  @version: "0.1.5"
+  @version: "0.1.6"
 
   @options: [
     ["-s", "--save",    "Compile to JavaScript and save as .js files"]

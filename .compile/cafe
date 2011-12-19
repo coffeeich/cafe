@@ -29,6 +29,26 @@ exec("which coffee && which cafe", function(error, stdOutput, stdError) {
   var cafePath   = fs.realpathSync(pare[1]);
 
   var coffeeLibPath = path.normalize(path.dirname(coffeePath) + "/../lib/node/coffee-script");
+  try {
+    var stats = fs.statSync(coffeeLibPath);
+    if (! stats.isDirectory()) {
+      coffeeLibPath = null;
+    }
+  } catch (ex) {
+    coffeeLibPath = null;
+  }
+  if (! coffeeLibPath) {
+    coffeeLibPath = path.normalize(path.dirname(coffeePath) + "/../lib/coffee-script");
+    var stats = fs.statSync(coffeeLibPath);
+    if (! stats.isDirectory()) {
+      coffeeLibPath = null;
+    }
+  }
+
+  if (! coffeeLibPath) {
+    throw Error("Can't find coffee");
+  }
+
   var cafeLibPath   = path.normalize(path.dirname(cafePath)   + "/../lib");
 
   var coffee       = require(coffeeLibPath);
