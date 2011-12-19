@@ -192,7 +192,7 @@ exports.Compiler = class Compiler
 
     @printer.print("Cafe version #{Compiler.version}\n")
 
-  @version: "0.1.6"
+  @version: "0.1.13"
 
   @options: [
     ["-s", "--save",    "Compile to JavaScript and save as .js files"]
