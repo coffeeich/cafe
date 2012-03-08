@@ -101,7 +101,9 @@ exports.Compiler = class Compiler
 
     {Import: BuildImport} = require("./build")
 
-    importParser = new BuildImport(require("path").dirname(@filePath), @cafeLibPath, @coffee)
+    fileDir = require("path").dirname(@filePath)
+
+    importParser = new BuildImport(fileDir, @cafeLibPath, @coffee)
 
     importParser.ignore([@filePath])
 
@@ -109,7 +111,7 @@ exports.Compiler = class Compiler
 
     extenders = require("./extenders")
 
-    extendersParser = new extenders.Parser(require("path").dirname(@filePath), @cafeLibPath, @coffee)
+    extendersParser = new extenders.Parser(fileDir, @cafeLibPath, @coffee)
 
     code = extendersParser.parse(code)
 

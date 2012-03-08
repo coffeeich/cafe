@@ -4,12 +4,6 @@ var fs   = require("fs");
 var path = require("path");
 var exec = require("child_process").exec;
 
-require.paths.unshift(
-  path.dirname(
-    fs.realpathSync(__filename)
-  )
-);
-
 exec("which coffee && which cafe", function(error, stdOutput, stdError) {
   if (stdError) {
     console.log(stdError);
@@ -28,6 +22,7 @@ exec("which coffee && which cafe", function(error, stdOutput, stdError) {
   var coffeePath = fs.realpathSync(pare[0]);
   var cafePath   = fs.realpathSync(pare[1]);
 
+  // check path to CoffeeScript lib dir for CoffeeScript@0.9.6 and node@0.3.0 with not latest npm
   var coffeeLibPath = path.normalize(path.dirname(coffeePath) + "/../lib/node/coffee-script");
   try {
     var stats = fs.statSync(coffeeLibPath);
@@ -38,9 +33,26 @@ exec("which coffee && which cafe", function(error, stdOutput, stdError) {
     coffeeLibPath = null;
   }
   if (! coffeeLibPath) {
+    // check path to CoffeeScript lib dir for CoffeeScript@1.2.0 and node@0.6.10 with node from latest npm
     coffeeLibPath = path.normalize(path.dirname(coffeePath) + "/../lib/coffee-script");
-    var stats = fs.statSync(coffeeLibPath);
-    if (! stats.isDirectory()) {
+    try {
+      var stats = fs.statSync(coffeeLibPath);
+      if (! stats.isDirectory()) {
+        coffeeLibPath = null;
+      }
+    } catch (ex) {
+      coffeeLibPath = null;
+    }
+  }
+  if (! coffeeLibPath) {
+    // check path to CoffeeScript lib dir for CoffeeScript@0.9.6 and node@0.6.10 with node from latest npm
+    coffeeLibPath = path.normalize(path.dirname(coffeePath) + "/../lib");
+    try {
+      var stats = fs.statSync(coffeeLibPath);
+      if (! stats.isDirectory()) {
+        coffeeLibPath = null;
+      }
+    } catch (ex) {
       coffeeLibPath = null;
     }
   }
@@ -53,7 +65,7 @@ exec("which coffee && which cafe", function(error, stdOutput, stdError) {
 
   var coffee       = require(coffeeLibPath);
   var OptionParser = require(coffeeLibPath + "/optparse").OptionParser;
-  var Compiler     = require("compiler").Compiler
+  var Compiler     = require(path.dirname(fs.realpathSync(__filename))+"/compiler").Compiler
 
   var compiler = new Compiler(
     coffee,
